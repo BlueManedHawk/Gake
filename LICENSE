@@ -1,0 +1,19 @@
+LICENSE
+
+Copyright © 2021 BlueManedHawk.  All rights reserved.
+
+This project is copylefted.  You may freely use this software for any purpose, to the extent permitted by law, so long as you do not attempt to claim that such use is condoned by the author.  You may freely make the usage of this software available to anybody, to the extent permitted by law, so long as you make this license and the source code for the software clearly and easily available, and you do not attempt to claim that such use is condoned by the author.  You may freely modify this software and distribute such modified versions, to the extent permitted by law, so long as you put such modifications under a license that grants the same rights as this one under the same conditions and with the same restrictions, you make available the source code for any binaries compiled from modified versions, and you do not attempt to claim that the modified software is the original software or that the modifications are condoned by the author.
+
+This license does not apply to anything that uses the API of this software, but it does apply to the API itself.
+
+Rule files created by this software must be put into the public domain.
+
+This software dynamically links to SDL2, which is under the zlib license, available at https://libsdl.org/license.php.
+
+The assets for this software are copylefted.  You may freely use them for any purpose, to the extent permitted by law, so long as you do not attempt to claim that such use is condoned by the author.  You may freely distribute the assets, to the extent permitted by law, so long as you make this license clearly and easily available, and you do not attempt to claim that such distribution is condoned by the author.  You may freely modify the assets and distribute such modified versions, to the extent permitted by law, so long as you put such modifications under a license that grants the same rights as this one under the same conditions and with the same restrictions, and you do not attempt to claim that the modified assets are the original assets or that such modifications are condoned by the author.
+
+Neither of these licenses apply to trademarks or patents.
+
+Modification refers only to the act of taking the copyrighted works and making changes to them, not to normal usage.
+
+THIS PRODUCT COMES WITH ABSOLUTELY NO WARRANTY, IMPLIED OR EXPLICIT, TO THE EXTENT PERMITTED BY LAW.  THE AUTHOR DISCLAIMS ANY LIABILITY FOR ANY DAMAGES OF ANY KIND CAUSED BY THIS PRODUCT, TO THE EXTENT PERMITTED BY LAW.
