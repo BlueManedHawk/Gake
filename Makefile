@@ -39,13 +39,13 @@ release: $(OBJ)
 debug:
 	@echo "I'm not sure how to implement this target yet.  Use the release target for now."
 
+# I intend to implement installation of the manpages and the API once they exist.  Also, the asset copying method is really stupid.  I'm aware that this checks if the directory exists every time, but I think that the time benefit from restructuring it to not do that would be too small to be useful.
 install: Gake.elf
-	@# I intend to implement installation of the manpages and the API once they exist.
-	@if [ $$USER = root ] ; then\
+	if [ $$USER = root ] ; then\
 		cp Gake.elf /usr/local/games/gake ;\
 		if [ ! -e /usr/local/share/Gake/ ] ;\
-			then mkdir /usr/local/share/Gake/ ; fi ;\
-		cp -r Assets/ /usr/local/share/Gake/ ;\
+			then mkdir -p /usr/local/share/Gake/Assets/ ; fi ;\
+		cp -r Assets/*.png /usr/local/share/Gake/Assets/ ;\
 	else echo "You can only install Gake as root!" ; fi
 
 clean: $(OBJ)
