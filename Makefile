@@ -40,11 +40,13 @@ debug:
 	@echo "I'm not sure how to implement this target yet.  Use the release target for now."
 
 install: Gake.elf
-	# I intend to implement installation of the manpages and the API once they exist.
-	@if [ ! $$$$USER = root ] ; then\
+	@# I intend to implement installation of the manpages and the API once they exist.
+	@if [ $$USER = root ] ; then\
 		cp Gake.elf /usr/local/games/gake ;\
-		cp Assets/ /usr/local/share/Gake/Assets/ ;\
-	else echo "You can only install Gake as root!"
+		if [ ! -e /usr/local/share/Gake/ ] ;\
+			then mkdir /usr/local/share/Gake/ ; fi ;\
+		cp -r Assets/ /usr/local/share/Gake/ ;\
+	else echo "You can only install Gake as root!" ; fi
 
 clean: $(OBJ)
 	rm $<
