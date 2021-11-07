@@ -55,6 +55,7 @@ int main(int argc, char ** argv) {
 			return 1; /* Counted as a failure for consistency with other software and not breaking things like `make`. */
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
+			return 1;
 		}
 	}
 }

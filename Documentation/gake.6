@@ -3,12 +3,20 @@
 gake \- an open-source reimplementation of Google's snake game, with extensions.
 .SH SYNOPSIS
 .B gake
+[
+.B -v?h
+]
 .SH CONFIGURATION
 Gake does not currently have any configuration features.  In the future, a config file may be located in $XDG_CONFIG_HOME/Gake/ (or $HOME/.config/Gake).
 .SH DESCRIPTION
 Gake isn't currently anything.  In the future, it will be an open-source reimplementation of Google Snake, with some extensions.
 .SH OPTIONS
-Gake does not currently support any command-line options, but it will in the future.  None of these options will be GNU-Style options.
+.TP
+.BR \-v
+Displays the version of the program, then exits.
+.TP
+.BR \-h ", " \-?
+Displays a blurb of help, then exits.
 .SH EXIT STATUS
 Gake will exit with a 0 code if everything went fine.  If it crashes, it will exit with a nonzero exit code based on what caused the crash.
 .SH ENVIRONMENT
