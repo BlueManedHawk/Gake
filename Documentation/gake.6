@@ -18,7 +18,11 @@ Displays the version of the program, then exits.
 .BR \-h ", " \-?
 Displays a blurb of help, then exits.
 .SH EXIT STATUS
-Gake will exit with a 0 code if everything went fine.  If it crashes, it will exit with a nonzero exit code based on what caused the crash.
+Gake returns a 0 if everything went fine.  Gake returns a 1 when used with \-v or \-?, for compatibility with other programs.
+
+If Gake crashes, it will return a value ≥2, and will invoke a crash handler that will create an SDL messagebox giving a bit more explanation of the problem.  Currently, the exit codes are:
+.IP
+0x02:  User attempted to start the program with GNU-style options.
 .SH ENVIRONMENT
 The XDG environmental variables will probably be used by Gake, if they are set.
 .SH FILES

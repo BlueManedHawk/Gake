@@ -15,7 +15,7 @@ This makefile is designed for GNU Make.
 endif
 
 CC = clang-13
-CFLAGS = -Wall -Werror -Wextra -std=c2x -O3 -fdiagnostics-show-category=name ` sdl2-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
+CFLAGS = -Wall -Werror -Wextra -std=c2x -glldb -fdiagnostics-show-category=name ` sdl2-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
 LDFLAGS = ` sdl2-config --libs `
 # I don't know what this does or how it works.  I stole this from the makefile for jdh's 48-hour Minecraft clone.
 SRC = $(wildcard Source/*.c)
@@ -34,7 +34,7 @@ help:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 release: $(OBJ)
-	$(CC) $(LDFLAGS) $< -o Gake.elf
+	$(CC) $(LDFLAGS) $^ -o Gake.elf
 
 debug:
 	@echo "I'm not sure how to implement this target yet.  Use the release target for now."
@@ -53,5 +53,5 @@ install: Gake.elf
 	else echo "You can only install Gake as root!" ; fi
 
 clean: $(OBJ)
-	rm $<
+	rm $^
 	if [ -e Gake.elf ] ; then rm Gake.elf ; fi

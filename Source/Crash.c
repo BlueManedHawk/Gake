@@ -14,7 +14,7 @@
  *
  * THIS PRODUCT COMES WITH ABSOLUTELY NO WARRANTY, IMPLIED OR EXPLICIT, TO THE EXTENT PERMITTED BY LAW.  THE AUTHOR DISCLAIMS ANY LIABILITY FOR ANY DAMAGES OF ANY KIND CAUSED BY THIS PRODUCT, TO THE EXTENT PERMITTED BY LAW.*/
 
-/* This is the main file for Gake.  It contains the `main()` function.
+/* This is the crash handler for Gake.
  *
  * When reading this file, you are expected to have access to and generally understand the following documents:
  * 	· Latest draft of C2x:  http://www.open-std.org/JTC1/SC22/WG14/www/docs/n2596.pdf
@@ -22,41 +22,68 @@
  * 	· Wikipedia page on ANSI escape codes:  https://en.wikipedia.org/wiki/ANSI_escape_code
  * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
 
-#ifdef __cplusplus
-#	error "\e[5m\e[1m\e[31mTHIS IS NOT A C++ PROGRAM."
-#endif
-
-#if __clang_major__ != 13
-#	error "This program is intended to be compiled with Clang 13, which you appear to not have.  Please go obtain a copy of it."
-#endif
-
-#include <stdio.h>
-#include <unistd.h>
 #include "Crash.h"
+#include <stdnoreturn.h>
+#include "SDL.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <time.h>
+#include <stdlib.h>
+#include <string.h>
 
-int main(int argc, char ** argv) {
-	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-")){
-		switch (opts){
-		case 0:
-			break;
-		case '-':
-			printf(
-			"\e[31m\e[1mGake does not and never will support GNU-style options.\e[m\n"
-			"\n"
-			"(If you were trying to use \e[4m--help\e[m or \e[4m--version\e[m, please use \e[4m-h\e[m or \e[4m-v\e[m.)\n");
-			crash(2, "No extra info.");
-		case '?':
-		case 'h':
-			printf(
-			"Gake is an open-source reimplementation of Google Snake, with extensions.\n"
-			"\n"
-			"Currently, the only options supported are \e[4m-v\e[m, which states the version, and \e[4m-h\e[m and \e[4m-?\e[m, both of which give this help blurb.\n"
-			"\n"
-			"\e[1mThis program does not and never will support GNU-style options.\e[m\n");
-			return 1; /* Counted as a failure for consistency with other software and not breaking things like `make`. */
-		case 'v':
-			printf("This is Gake vN.0, semantic version 0.0.0.\n");
-			return 1; /* See above comment. */
-		}
+static const char arr_msgs[4][128] = {
+	/*0*/ "Crash with successful exit.  This shouldn't happen.",
+	/*1*/ "Technical failure.  This should not be handled by the crash handler.",
+	/*2*/ "User has attempted to use GNU-style options when starting program."
+} ;
+
+noreturn void crash(uint8_t code, [[maybe_unused]] char * info_fmt, ...){
+
+	char msg[128];
+	strcpy(msg, arr_msgs[code]);
+	va_list vargs;
+	va_start(vargs, info_fmt);
+	char info[256];
+	vsnprintf(info, 256, info_fmt, vargs);
+	va_end(vargs);
+
+	time_t timer = time(NULL);
+	struct tm * time = localtime(&timer);
+	char time_str[128];
+	strftime(time_str, 64, "%X", time);
+	printf("[%s] \e[41;1mCRITICAL:\e[m\e[31;1m Gake has crashed!  Error code: %d, which means:\n\n%s\n\nAdditional info:\n\n%s\n\nQuitting now…\n\e[m", time_str, code, msg, info);
+
+	char msg_box_str[512];
+	sprintf(msg_box_str,
+	"Gake has crashed!\n"
+	"\n"
+	"Exit code:  %d\n"
+	"which means:  %s\n"
+	"\n"
+	"Additional information:  %s\n"
+	"\n"
+	"Crash occurred at %s.\n"
+	"\n"
+	"Would you like to save this crash report?", code, msg, info, time_str);
+
+	SDL_MessageBoxButtonData buttons[2] = {
+		{SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Nah, just quit"},
+		{SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Save crash report"}
+	};
+	SDL_MessageBoxData msg_data = {
+		SDL_MESSAGEBOX_ERROR,
+		NULL,
+		"Gake Crash Handler",
+		msg_box_str,
+		2,
+		buttons,
+		NULL /* Might want to use a different one at some point. */
+	};
+	int button = 0;
+	SDL_ShowMessageBox(&msg_data, &button);
+	if (button == 1){
+		printf("\e[33mCrash report saving has not yet been implemented.  Sorry!\e[m\n");
 	}
+	exit(code);
 }
