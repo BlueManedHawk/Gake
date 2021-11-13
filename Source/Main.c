@@ -30,12 +30,34 @@
 #	error "This program is intended to be compiled with Clang 13, which you appear to not have.  Please go obtain a copy of it."
 #endif
 
+#define _POSIX_C_SOURCE
+
 #include <stdio.h>
 #include <unistd.h>
 #include "Crash.h"
+#include <signal.h>
 
-int main(int argc, char ** argv) {
-	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-")){
+int main(int argc, char ** argv)
+{
+	struct sigaction act = {
+		.sa_sigaction = handler,
+		.sa_mask = { 0 },
+		.sa_flags = SA_SIGINFO
+	};
+	/* If you ever need to update these, be certain that the terminating zeros remain. */
+	int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS, 0};
+	int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM, 0};
+	for (register int i = 0; sigs_to_handle[i] != 0; i++){
+		sigaction(sigs_to_handle[i], &act, NULL);
+	}
+	struct sigaction ign = {
+		.sa_handler = SIG_IGN
+	};
+	for (register int i = 0; sigs_to_ign[i] != 0; i++){
+		sigaction(sigs_to_ign[i], &ign, NULL);
+	}
+
+	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-a")){
 		switch (opts){
 		case 0:
 			break;
@@ -57,6 +79,8 @@ int main(int argc, char ** argv) {
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
 			return 1; /* See above comment. */
+		case 'a':
+			raise(SIGABRT);
 		}
 	}
 }
