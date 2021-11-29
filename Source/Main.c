@@ -30,15 +30,19 @@
 #	error "This program is intended to be compiled with Clang 13, which you appear to not have.  Please go obtain a copy of it."
 #endif
 
-#define _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
 
 #include <stdio.h>
 #include <unistd.h>
 #include "Crash.h"
 #include <signal.h>
+#include "Logging.h" /* Theoretically, this program could use POSIX's logging systems, but those seemed to me to be too implementation-defined to be very useful. */
+#include <string.h>
+#include <stdlib.h>
 
 int main(int argc, char ** argv)
 {
+
 	struct sigaction act = {
 		.sa_sigaction = handler,
 		.sa_mask = { 0 },
@@ -57,7 +61,7 @@ int main(int argc, char ** argv)
 		sigaction(sigs_to_ign[i], &ign, NULL);
 	}
 
-	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-a")){
+	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-")){
 		switch (opts){
 		case 0:
 			break;
@@ -79,8 +83,13 @@ int main(int argc, char ** argv)
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
 			return 1; /* See above comment. */
-		case 'a':
-			raise(SIGABRT);
 		}
 	}
+
+//	setup_logging();
+
+	logmsg(lp_info, lc_misc, "Gake has been started!");
+	logmsg(lp_info, lc_misc, "This is Gake version N.0, semantic version 0.0.0, compiled on %s at %s.", __DATE__, __TIME__);
+
+//	halt_logging();
 }

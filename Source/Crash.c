@@ -59,7 +59,7 @@ static const char crash_msgs[16][128] = {
 /* This isn't written the best, and could probably be reorganized to make a bit more sense. */
 void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void * context)
 {
-	_Bool perform_default = -0;
+	_Bool perform_default = 0;
 
 	char details[512] = "No details given."; /* I intend to eventually have this get filled with information from `info`, but that's not strictly necessary, so for now it does nothing. */
 
@@ -123,7 +123,7 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 			"\n"
 			"Would you like to save this crash report?\n",
 			crashno, crash_msgs[crashno], details, crashstr);
-	printf("[time] \e[41mCRITICAL\e[m\e[31m:  %s", msg_box_msg);
+	printf("[time] \e[41mCRITICAL\e[m\e[31m:  %s\e[m", msg_box_msg);
 
 	SDL_MessageBoxButtonData buttons[2] = {
 		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Just quit" },
@@ -141,7 +141,7 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 	int button_id = 0;
 	SDL_ShowMessageBox(&msg_box_data, &button_id);
 
-	if (button_id){
+/*	if (button_id){
 		char * share = getenv("XDG_DATA_HOME");
 		if (share == NULL){
 			char * home = getenv("HOME");
@@ -152,19 +152,17 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 			}
 		}
 		char logfilename[64];
-		/* This is horrible. */
-		time_t the_time = time(NULL);
-		struct tm * time_struct = gmtime(&the_time);
 		char time_str[64];
-		strftime(time_str, 64, "%F%T", time_struct);
-		sprintf(logfilename, "%s/Gake/Crash_reports/%ld.txt", share, the_time);
-		FILE * logfile = fopen(logfilename, "w");
+		time_t the_time = time(NULL);
+		strftime(time_str, 64, "%F_%T", localtime(&the_time));
+		snprintf(logfilename, 64, "%s/Gake/Crash_reports/%s.txt", share, time_str);
+		FILE * logfile = fopen(logfilename, "a");
 		if (logfile == NULL){
 			printf("\e[33mThe logfile at %s could not be opened for writing.\e[m\n", logfilename);
 		} else {
 			fprintf(logfile, "%s", msg_box_data.message);
 		}
-	}
+	}*/
 
 	if (perform_default){
 		struct sigaction ign = {
@@ -176,5 +174,5 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 
 	exit(crashno);
 nothing:
-	printf("null\n");
+	((void)0);
 }
