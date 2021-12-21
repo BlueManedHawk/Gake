@@ -94,4 +94,5 @@ int main(int argc, char ** argv)
 
 //	halt_logging();
 	debug_test();
+	logmsg(lp_debug, lc_debug, "Debug logging test.");
 }

@@ -70,9 +70,15 @@ void halt_logging(void){
 [[gnu::format(printf, 3, 4)]] void logmsg(enum log_priority priority, enum log_category category, char * msg, ...){
 	char final_message[1024], time_str[64], priority_str[32], category_str[32];
 	switch (priority){
-	case lp_debug:
+	/* See `Logging.h`—this makes debug messages only show in debug builds.*/
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
+	case -1:
+		goto end;
+	case 1:
 		sprintf(priority_str, "\e[32mDEBUG\e[m");
 		break;
+#pragma clang diagnostic pop
 	case lp_info:
 		sprintf(priority_str, "\e[37mINFO\e[m");
 		break;
@@ -118,4 +124,6 @@ void halt_logging(void){
 	snprintf(final_message, 1024, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
 	fprintf(stderr, "%s", final_message);
 //	fprintf(logfile, "%s", final_message);
+end:
+	((void)0);
 }

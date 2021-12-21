@@ -19,18 +19,23 @@
 #include <stdarg.h>
 
 enum log_priority {
-	lp_debug,
-	lp_info,
-	lp_note,
-	lp_warn,
-	lp_err
+
+#ifdef GAKE_DEBUG
+	lp_debug = 1,
+#else
+	lp_debug = -1,
+#endif
+	lp_info = 2,
+	lp_note = 3,
+	lp_warn = 4,
+	lp_err = 5
 	/* See `Logging.c` for why there's no `lp_critical`. */
 };
 
 enum log_category {
-	lc_misc,
-	lc_debug,
-	lc_env
+	lc_misc = 1,
+	lc_debug = 2,
+	lc_env = 3
 	/* More categories will prove necessary. */
 };
 
@@ -38,4 +43,4 @@ extern void setup_logging(void);
 /* Keep in mind that this function is not sanitized—you'll need to do that yourself. */
 extern void logmsg(enum log_priority priority, enum log_category category, char * msg, ...);
 
-#endif
+#endif/*ndef LOGGING_H*/
