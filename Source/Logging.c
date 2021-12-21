@@ -30,6 +30,7 @@
 #include <time.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 static FILE * logfile = NULL;
 
@@ -102,9 +103,19 @@ void halt_logging(void){
 	va_start(ap, msg);
 	vsnprintf(formatted_msg, 512, msg, ap);
 	va_end(ap);
-	snprintf(final_message, 1024, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
+	snprintf(final_message, sizeof final_message, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
 	fprintf(stderr, "%s", final_message);
 	if (logfile != NULL){
+		char * found_escape;
+		/* Wtf!? */
+		while (NULL != (found_escape = strchr(final_message, (int)'\e'))){
+			short j = 0;
+			do {
+				j++;
+			} while (*(found_escape + j) != 'm');
+			for (int k = 0; k <= j; k++)
+				*(found_escape + k) = ' ';
+		}
 		fprintf(logfile, "%s", final_message);
 		fflush(logfile);
 	}
