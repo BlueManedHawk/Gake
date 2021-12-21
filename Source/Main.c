@@ -39,6 +39,7 @@
 #include "Logging.h" /* Theoretically, this program could use POSIX's logging systems, but those seemed to me to be too implementation-defined to be very useful. */
 #include <string.h>
 #include <stdlib.h>
+#include "Debug.h"
 
 int main(int argc, char ** argv)
 {
@@ -92,4 +93,5 @@ int main(int argc, char ** argv)
 	logmsg(lp_info, lc_misc, "This is Gake version N.0, semantic version 0.0.0, compiled on %s at %s.", __DATE__, __TIME__);
 
 //	halt_logging();
+	debug_test();
 }

@@ -16,7 +16,7 @@ endif
 
 CC = clang-13
 CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` -O2 # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
-CFLAGS_DEBUG = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` -O0 -glldb 
+CFLAGS_DEBUG = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` -O0 -glldb
 LDFLAGS = ` sdl2-config --libs `
 # I don't know what this does or how it works.  I stole this from the makefile for jdh's 48-hour Minecraft clone.
 SRC = $(wildcard Source/*.c)
@@ -34,6 +34,7 @@ help:
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# Compiling a debug target works by recompiling the Main file with a macro `GAKE_DEBUG` defined.  The headers included in the Main file check to see if this macro is defined, and depending on whether it is, expose or don't expose certain functions.  This means that to make a debug build, _only_ the main file needs to be recompiled, instead of all of the files.  (Did that make sense?  I sure hope so.)
 
 release: $(OBJ)
 	$(CC) $(CFLAGS) -c Source/Main.c -o Source/Main.o
