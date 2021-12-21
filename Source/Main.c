@@ -87,12 +87,13 @@ int main(int argc, char ** argv)
 		}
 	}
 
-//	setup_logging();
+	setup_logging();
 
 	logmsg(lp_info, lc_misc, "Gake has been started!");
 	logmsg(lp_info, lc_misc, "This is Gake version N.0, semantic version 0.0.0, compiled on %s at %s.", __DATE__, __TIME__);
 
-//	halt_logging();
 	debug_test();
 	logmsg(lp_debug, lc_debug, "Debug logging test.");
+
+	halt_logging();
 }

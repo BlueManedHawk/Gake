@@ -40,6 +40,7 @@ enum log_category {
 };
 
 extern void setup_logging(void);
+extern void halt_logging(void);
 /* Keep in mind that this function is not sanitized—you'll need to do that yourself. */
 extern void logmsg(enum log_priority priority, enum log_category category, char * msg, ...);
 

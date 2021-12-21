@@ -31,40 +31,21 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-/*static FILE * logfile = NULL;
+static FILE * logfile = NULL;
 
 void setup_logging(void){
-	char * state = getenv("XDG_STATE_HOME");
-	if (state == NULL){
-		char * home = getenv("HOME");
-		if (home != NULL){
-			sprintf(state, "%s/.local/state", home);
-		}
-	}
-
-	char logfile_location[256];
+	char logfilename[128];
 	char time_str[64];
 	time_t the_time = time(NULL);
-	strftime(time_str, 64, "%F_%T", localtime(&the_time));
-
-	if (state != NULL){
-		snprintf(logfile_location, 256, "%s/Gake/log_%s.log", state, time_str);
-		logfile = fopen(logfile_location, "a");
-		if (logfile == NULL){
-			snprintf(logfile_location, 256, "/tmp/Gake/log_%s.log", time_str);
-			logfile = fopen(logfile_location, "a");
-			fprintf(stderr, "\e[1;33mNotice:  An appropriate location for a log file could not be found.  Please make sure that either \e[1;4m$HOME\e[1;33m or \e[1;4m$XDG_STATE_HOME\e[1;33m is set.");
-		}
-	} else {
-		snprintf(logfile_location, 256, "/tmp/Gake/log_%s.log", time_str);
-		logfile = fopen(logfile_location, "a");
-		fprintf(stderr, "\e[1;33mNotice:  An appropriate location for a log file could not be found.  Please make sure that either \e[1;4m$HOME\e[1;33m or \e[1;4m$XDG_STATE_HOME\e[1;33m is set.");
-	}
+	if (strftime(time_str, sizeof (time_str), "%F_%T", localtime(&the_time)) == 0)
+		snprintf(time_str, sizeof (time_str), "UNKNOWN_TIME_%d", rand());
+	snprintf(logfilename, sizeof (logfilename), "/tmp/%s.txt", time_str);
+	logfile = fopen(logfilename, "w");
 }
 
 void halt_logging(void){
 	fclose(logfile);
-} */
+}
 
 /* Note that `logmsg` assumes that you've sanitized the string before you log it. */
 [[gnu::format(printf, 3, 4)]] void logmsg(enum log_priority priority, enum log_category category, char * msg, ...){
@@ -123,7 +104,10 @@ void halt_logging(void){
 	va_end(ap);
 	snprintf(final_message, 1024, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
 	fprintf(stderr, "%s", final_message);
-//	fprintf(logfile, "%s", final_message);
+	if (logfile != NULL){
+		fprintf(logfile, "%s", final_message);
+		fflush(logfile);
+	}
 end:
 	((void)0);
 }
