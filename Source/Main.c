@@ -77,7 +77,7 @@ int main(int argc, char ** argv)
 			printf(
 			"Gake is an open-source reimplementation of Google Snake, with extensions.\n"
 			"\n"
-			"Currently, the only options supported are \e[4m-v\e[m, which states the version, and \e[4m-h\e[m and \e[4m-?\e[m, both of which give this help blurb.\n"
+			"Currently, the only options supported are \e[4m-v\e[m, which states the version, and \e[4m-h\e[m and \e[4m-?\e[m, both of which give this help blurb.  If you specify no options, the game will start normally.\n"
 			"\n"
 			"\e[1mThis program does not and never will support GNU-style options.\e[m\n");
 			return 1; /* Counted as a failure for consistency with other software and not breaking things like `make`. */

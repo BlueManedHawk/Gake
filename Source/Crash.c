@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include "SDL.h"
 #include <time.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 uint8_t crashno;
 char crashstr[512]; /* Should be enough for anything, right? */
@@ -53,7 +56,7 @@ static const char crash_msgs[16][128] = {
 	va_start(ap, info);
 	vsnprintf(crashstr, sizeof crashstr, info, ap);
 	va_end(ap);
-	raise(SIGUSR1); /* We're using this signal to indicate a program-instantiated crash. */
+	raise(SIGUSR1); /* We're using this signal to indicate a program-instantiated crash. Theorhetically, someone could just raise this manually, but this is the preferred way to do it. */
 }
 
 /* This isn't written the best, and could probably be reorganized to make a bit more sense. */
@@ -63,8 +66,8 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 
 	char details[512] = "No details given."; /* I intend to eventually have this get filled with information from `info`, but that's not strictly necessary, so for now it does nothing. */
 
+	/* There's gotta be a better way to write this, but since this will only be called at most once during each execution, optimization is not a priority of mine. */
 	switch (signo){
-
 	case SIGABRT:
 		perform_default = 1;
 		crashno = 0x03;
@@ -141,28 +144,52 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 	int button_id = 0;
 	SDL_ShowMessageBox(&msg_box_data, &button_id);
 
-/*	if (button_id){
+	if (button_id){
 		char * share = getenv("XDG_DATA_HOME");
 		if (share == NULL){
 			char * home = getenv("HOME");
 			if (home == NULL){
 				printf("\e[33mSorry, but an appropriate place to log this crash could not be found because neither `$XDG_DATA_HOME` nor `$HOME` was set.\e[m\n");
+				SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "No valid logging location", "Sorry, but an appropriate place to log this crash could not be found because neither `$XDG_DATA_HOME` nor `$HOME` was set.", NULL);
 			} else {
 				sprintf(share, "%s/.local/share", home);
 			}
 		}
-		char logfilename[64];
+		char crash_report_name[128];
 		char time_str[64];
 		time_t the_time = time(NULL);
 		strftime(time_str, 64, "%F_%T", localtime(&the_time));
-		snprintf(logfilename, 64, "%s/Gake/Crash_reports/%s.txt", share, time_str);
-		FILE * logfile = fopen(logfilename, "a");
-		if (logfile == NULL){
-			printf("\e[33mThe logfile at %s could not be opened for writing.\e[m\n", logfilename);
-		} else {
-			fprintf(logfile, "%s", msg_box_data.message);
+		/* Again, there's something to be said about optimization, but again, this is only ever going to be run once at most during the program lifetime. */
+		snprintf(crash_report_name, 128, "%s/Gake/", share); // Temporarily use `crash_report_name` for the directory where the report should go.
+		DIR * crash_report_dir = opendir(crash_report_name);
+		if (crash_report_dir == NULL){
+			if (errno == ENOENT){
+				mkdir(crash_report_name, 0755);
+				closedir(crash_report_dir);
+			}
 		}
-	}*/
+		memset(crash_report_name, 0, 128);
+		snprintf(crash_report_name, 128, "%s/Gake/Crash_Reports/", share);
+		crash_report_dir = opendir(crash_report_name);
+		if (crash_report_dir == NULL){
+			if (errno == ENOENT){
+				mkdir(crash_report_name, 0755);
+				closedir(crash_report_dir);
+			}
+		}
+		memset(crash_report_name, 0, 128);
+		snprintf(crash_report_name, 128, "%s/Gake/Crash_Reports/%s.txt", share, time_str);
+		FILE * crash_report = fopen(crash_report_name, "a");
+		if (crash_report == NULL){
+			char logerrormsg[256];
+			snprintf(logerrormsg, 256, "The logfile at\n %s \ncould not be opened for writing.", crash_report_name);
+			printf("\e[33m%s\e[m\n", logerrormsg);
+			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Unopenable logfile", logerrormsg, NULL);
+		} else {
+			fprintf(crash_report, "%s", msg_box_data.message);
+			fclose(crash_report);
+		}
+	}
 
 	if (perform_default){
 		struct sigaction ign = {
