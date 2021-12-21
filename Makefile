@@ -15,7 +15,8 @@ This makefile is designed for GNU Make.
 endif
 
 CC = clang-13
-CFLAGS = -Wall -Werror -Wextra -std=c2x -glldb -fdiagnostics-show-category=name ` sdl2-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
+CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` -O2 # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
+CFLAGS_DEBUG = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` -O0 -glldb 
 LDFLAGS = ` sdl2-config --libs `
 # I don't know what this does or how it works.  I stole this from the makefile for jdh's 48-hour Minecraft clone.
 SRC = $(wildcard Source/*.c)
@@ -25,7 +26,7 @@ help:
 	@echo "No target selected.  Available targets are:\n"\
 	"	help: Show this blurb and exit.\n"\
 	"	release: Prepare a release build.\n"\
-	"	\\e[9mdebug\\e[m\\e[33m(not yet implemented—will do nothing:)\\e[m Prepare a debug build.\n"\
+	"	debug: Prepare a debug build.\n"\
 	"\\e[41m\\e[1m**DANGER ZONE**\\e[m\n"\
 	"	\\e[31minstall: Installs the software and associated items.\n"\
 	"	clean: Cleans out object files and binaries.\\e[m\n"
@@ -33,13 +34,16 @@ help:
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+
 release: $(OBJ)
+	$(CC) $(CFLAGS) -c Source/Main.c -o Source/Main.o
 	$(CC) $(LDFLAGS) $^ -o Gake.elf
 
-debug:
-	@echo "I'm not sure how to implement this target yet.  Use the release target for now."
+debug: $(OBJ)
+	$(CC) $(CFLAGS_DEBUG) -DGAKE_DEBUG -c Source/Main.c -o Source/Main.o
+	$(CC) $(LDFLAGS) $^ -o Gake.elf
 
-# I intend to implement installation of the manpages and the API once they exist.  Also, the asset copying method is really stupid.  I'm aware that this checks if the directory exists every time, but I think that the time benefit from restructuring it to not do that would be too small to be useful.
+# I intend to implement installation of the API once it exists.  Also, the asset copying method is really stupid.  I'm aware that this checks if the directory exists every time, but I think that the time benefit from restructuring it to not do that would be too small to be useful.
 install: Gake.elf
 	@if [ $$USER = root ] ; then\
 		cp Gake.elf /usr/local/games/gake ;\
