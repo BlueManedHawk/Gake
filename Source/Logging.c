@@ -31,21 +31,22 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "zlib.h" /* zlib's documentation is available at https://zlib.net/manual.html, but this program only uses the GZip file stuff and the CRC thingies. */
 
-static FILE * logfile = NULL;
+static gzFile logfile = NULL;
 
 void setup_logging(void){
 	char logfilename[128];
 	char time_str[64];
 	time_t the_time = time(NULL);
-	if (strftime(time_str, sizeof (time_str), "%F_%T", localtime(&the_time)) == 0)
-		snprintf(time_str, sizeof (time_str), "UNKNOWN_TIME_%d", rand());
-	snprintf(logfilename, sizeof (logfilename), "/tmp/%s.txt", time_str);
-	logfile = fopen(logfilename, "w");
+	if (strftime(time_str, sizeof time_str, "%F_%T", localtime(&the_time)) == 0)
+		snprintf(time_str, sizeof time_str, "UNKNOWN_TIME_%d", rand());
+	snprintf(logfilename, sizeof logfilename, "/tmp/%s.txt.gz", time_str);
+	logfile = gzopen(logfilename, "wb9");
 }
 
 void halt_logging(void){
-	fclose(logfile);
+	gzclose(logfile);
 }
 
 /* Note that `logmsg` assumes that you've sanitized the string before you log it. */
@@ -107,7 +108,7 @@ void halt_logging(void){
 	fprintf(stderr, "%s", final_message);
 	if (logfile != NULL){
 		char * found_escape;
-		/* Wtf!? */
+		/* Wtf‽ */
 		while (NULL != (found_escape = strchr(final_message, (int)'\e'))){
 			short j = 0;
 			do {
@@ -116,8 +117,9 @@ void halt_logging(void){
 			for (int k = 0; k <= j; k++)
 				*(found_escape + k) = ' ';
 		}
-		fprintf(logfile, "%s", final_message);
-		fflush(logfile);
+		gzprintf(logfile, "%s", final_message);
+		/* zlib's manual states that `gzflush()` should only be called "when strictly necessary", stating that it will degrade performance if called too often.  I'm not sure whether it's best to use it like this. */
+		gzflush(logfile, Z_NO_FLUSH);
 	}
 end:
 	((void)0);
