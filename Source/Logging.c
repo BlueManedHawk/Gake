@@ -32,6 +32,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "zlib.h" /* zlib's documentation is available at https://zlib.net/manual.html, but this program only uses the GZip file stuff and the CRC thingies. */
+#include <errno.h>
+#include <sys/stat.h>
+#include <dirent.h>
 
 static gzFile logfile = NULL;
 
@@ -41,7 +44,37 @@ void setup_logging(void){
 	time_t the_time = time(NULL);
 	if (strftime(time_str, sizeof time_str, "%F_%T", localtime(&the_time)) == 0)
 		snprintf(time_str, sizeof time_str, "UNKNOWN_TIME_%d", rand());
-	snprintf(logfilename, sizeof logfilename, "/tmp/%s.txt.gz", time_str);
+	char state[64];
+	char * stateptr = getenv("XDG_STATE_HOME");
+	if (stateptr == NULL){
+		char * home = getenv("HOME");
+		if (home != NULL){
+			sprintf(state, "%s/.local/state", home);
+			DIR * logdir = opendir(state);
+			if (logdir == NULL){
+				if (errno == ENOENT){
+					mkdir(state, 0755);
+				}
+			}
+			closedir(logdir);
+		} else {
+			sprintf(state, "/tmp");
+			printf("\e[31mAn appropriate place for a logfile could not be found as neither $XDG_STATE_HOME nor $HOME was set.  This log will be saved in `/tmp/`.\n\e[m");
+		}
+	} else {
+		strcpy(state, stateptr);
+	}
+	snprintf(logfilename, sizeof logfilename, "%s/Gake/", state); // Temporarily use `logfilename` for the directory where the logfile should go.
+	DIR * logdir = opendir(logfilename);
+	if (logdir == NULL){
+		if (errno == ENOENT){
+			mkdir(state, 0755);
+		}
+		strerror(errno);
+	}
+	closedir(logdir);
+	memset(logfilename, 0, sizeof logfilename);
+	snprintf(logfilename, sizeof logfilename, "%s/Gake/%s.txt.gz", state, time_str);
 	logfile = gzopen(logfilename, "wb9");
 }
 
@@ -53,7 +86,7 @@ void halt_logging(void){
 [[gnu::format(printf, 3, 4)]] void logmsg(enum log_priority priority, enum log_category category, char * msg, ...){
 	char final_message[1024], time_str[64], priority_str[32], category_str[32];
 	switch (priority){
-	/* See `Logging.h`—this makes debug messages only show in debug builds.*/
+	/* See `Logging.h`—this makes debug messages only show in debug builds. This is kinda a silly way to do it, but oh well. */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wswitch"
 	case -1:
@@ -79,6 +112,7 @@ void halt_logging(void){
 		break;
 	}
 
+	/* FIXME: This could probably be done a little more efficiently if it were to use something like a pair of arrays.  Might be a bit more difficult to maintain, though. */
 	switch (category){
 	case lc_misc:
 		sprintf(category_str, "Miscellaneous");
@@ -88,6 +122,9 @@ void halt_logging(void){
 		break;
 	case lc_env:
 		sprintf(category_str, "Host environment");
+		break;
+	case lc_checks:
+		sprintf(category_str, "Runtime checks");
 		break;
 	default:
 		sprintf(category_str, "Unknown category");
@@ -106,7 +143,7 @@ void halt_logging(void){
 	va_end(ap);
 	snprintf(final_message, sizeof final_message, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
 	fprintf(stderr, "%s", final_message);
-	if (logfile != NULL){
+	if (logfile != NULL){ // Might not want to have this be checked every time this function is called, but I don't think there's a way around it.
 		char * found_escape;
 		/* Wtf‽ */
 		while (NULL != (found_escape = strchr(final_message, (int)'\e'))){

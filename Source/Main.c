@@ -79,6 +79,8 @@ int main(int argc, char ** argv)
 			"\n"
 			"Currently, the only options supported are \e[4m-v\e[m, which states the version, and \e[4m-h\e[m and \e[4m-?\e[m, both of which give this help blurb.  If you specify no options, the game will start normally.\n"
 			"\n"
+			"For more information, please see the manpage (available with \e[1mman gake\e[m, if installed).\n"
+			"\n"
 			"\e[1mThis program does not and never will support GNU-style options.\e[m\n");
 			return 1; /* Counted as a failure for consistency with other software and not breaking things like `make`. */
 		case 'v':
@@ -92,8 +94,11 @@ int main(int argc, char ** argv)
 	logmsg(lp_info, lc_misc, "Gake has been started!");
 	logmsg(lp_info, lc_misc, "This is Gake version N.0, semantic version 0.0.0, compiled on %s at %s.", __DATE__, __TIME__);
 
-	debug_test();
-	logmsg(lp_debug, lc_debug, "Debug logging test.");
+	debug_notice();
+
+	logmsg(lp_debug, lc_checks, "Beginning checks…");
+	/* Preparation. */
+	//run_checks();
 
 	halt_logging();
 }

@@ -22,8 +22,8 @@
  * 	· Wikipedia page on ANSI escape codes:  https://en.wikipedia.org/wiki/ANSI_escape_code
  * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
 
-#include <stdio.h>
+#include "Logging.h"
 
 void debug_test(void){
-	printf("\e[13mheehoo peanut\e[m\n");
+	logmsg(lp_debug, lc_debug, "This is a DEBUG build of Gake.");
 }

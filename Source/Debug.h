@@ -19,11 +19,11 @@
 
 #ifdef GAKE_DEBUG
 
-extern void debug_test(void);
+extern void debug_notice(void);
 
 #else
 
-[[clang::overloadable]] void debug_test(void){
+[[clang::overloadable]] void debug_notice(void){
 	((void)0);
 }
 

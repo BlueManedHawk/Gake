@@ -49,7 +49,7 @@ static const char crash_msgs[16][128] = {
 	/*0x0A*/"Termination request sent to program.",
 	/*0x0B*/"An invalid system call was made."};
 
-[[gnu::format(printf, 2, 3)]] void crash (uint8_t code, char * info, ...)
+[[gnu::format(printf, 2, 3)]] void crash(uint8_t code, char * info, ...)
 {
 	crashno = code;
 	va_list ap;
@@ -66,7 +66,7 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 
 	char details[512] = "No details given."; /* I intend to eventually have this get filled with information from `info`, but that's not strictly necessary, so for now it does nothing. */
 
-	/* There's gotta be a better way to write this, but since this will only be called at most once during each execution, optimization is not a priority of mine. */
+	/* There's gotta be a better way to write this (probably with a pair of arrays), but since this will only be called at most once during each execution, optimization is not a priority of mine. */
 	switch (signo){
 	case SIGABRT:
 		perform_default = 1;
@@ -145,8 +145,9 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 	SDL_ShowMessageBox(&msg_box_data, &button_id);
 
 	if (button_id){
-		char * share = getenv("XDG_DATA_HOME");
-		if (share == NULL){
+		char share[64];
+		char * shareptr = getenv("XDG_DATA_HOME");
+		if (shareptr == NULL){
 			char * home = getenv("HOME");
 			if (home == NULL){
 				printf("\e[33mSorry, but an appropriate place to log this crash could not be found because neither `$XDG_DATA_HOME` nor `$HOME` was set.\e[m\n");
@@ -154,6 +155,8 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 			} else {
 				sprintf(share, "%s/.local/share", home);
 			}
+		} else {
+			strcpy(share, shareptr);
 		}
 		char crash_report_name[128];
 		char time_str[64];
@@ -165,18 +168,18 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 		if (crash_report_dir == NULL){
 			if (errno == ENOENT){
 				mkdir(crash_report_name, 0755);
-				closedir(crash_report_dir);
 			}
 		}
+		closedir(crash_report_dir);
 		memset(crash_report_name, 0, 128);
 		snprintf(crash_report_name, 128, "%s/Gake/Crash_Reports/", share);
 		crash_report_dir = opendir(crash_report_name);
 		if (crash_report_dir == NULL){
 			if (errno == ENOENT){
 				mkdir(crash_report_name, 0755);
-				closedir(crash_report_dir);
 			}
 		}
+		closedir(crash_report_dir);
 		memset(crash_report_name, 0, 128);
 		snprintf(crash_report_name, 128, "%s/Gake/Crash_Reports/%s.txt", share, time_str);
 		FILE * crash_report = fopen(crash_report_name, "a");

@@ -19,7 +19,6 @@
 #include <stdarg.h>
 
 enum log_priority {
-
 #ifdef GAKE_DEBUG
 	lp_debug = 1,
 #else
@@ -35,7 +34,8 @@ enum log_priority {
 enum log_category {
 	lc_misc = 1,
 	lc_debug = 2,
-	lc_env = 3
+	lc_env = 3,
+	lc_checks = 4
 	/* More categories will prove necessary. */
 };
 
