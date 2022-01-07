@@ -22,6 +22,8 @@
  * 	· Wikipedia page on ANSI escape codes:  https://en.wikipedia.org/wiki/ANSI_escape_code
  * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdint.h>
 #include <stdarg.h>
 #include <signal.h>
@@ -60,11 +62,11 @@ static const char crash_msgs[16][128] = {
 }
 
 /* This isn't written the best, and could probably be reorganized to make a bit more sense. */
-void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void * context)
+void handler(int signo, siginfo_t * info, [[maybe_unused]] void * context)
 {
 	_Bool perform_default = 0;
 
-	char details[512] = "No details given."; /* I intend to eventually have this get filled with information from `info`, but that's not strictly necessary, so for now it does nothing. */
+	char details[256] = "No other details.";
 
 	/* There's gotta be a better way to write this (probably with a pair of arrays), but since this will only be called at most once during each execution, optimization is not a priority of mine. */
 	switch (signo){
@@ -75,10 +77,47 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 	case SIGBUS:
 		perform_default = 1;
 		crashno = 0x04;
+		switch (info->si_code){
+		case BUS_ADRALN:
+			snprintf(details, sizeof details, "The address %p is not a valid alignment.", info->si_addr);
+			break;
+		case BUS_ADRERR:
+			snprintf(details, sizeof details, "The address %p does not exist.", info->si_addr);
+			break;
+		case BUS_OBJERR:
+			snprintf(details, sizeof details, "The address %p is the source of this bus error.", info->si_addr);
+			break;
+		}
 		break;
 	case SIGFPE:
 		perform_default = 1;
 		crashno = 0x05;
+		switch (info->si_code){
+		case FPE_INTDIV:
+			snprintf(details, sizeof details, "At %p, the program tried to divide an integer by zero.", info->si_addr);
+			break;
+		case FPE_INTOVF:
+			snprintf(details, sizeof details, "At %p, the program overflowed an integer.", info->si_addr);
+			break;
+		case FPE_FLTDIV:
+			snprintf(details, sizeof details, "At %p, the program tried to divide a float by zero.", info->si_addr);
+			break;
+		case FPE_FLTOVF:
+			snprintf(details, sizeof details, "At %p, the program overflowed a float.", info->si_addr);
+			break;
+		case FPE_FLTUND:
+			snprintf(details, sizeof details, "At %p, the program underflowed a float.", info->si_addr);
+			break;
+		case FPE_FLTRES:
+			snprintf(details, sizeof details, "At %p, a float had an inexact result.", info->si_addr);
+			break;
+		case FPE_FLTINV:
+			snprintf(details, sizeof details, "At %p, the program tried to perform an invalid floating-point operation.", info->si_addr);
+			break;
+		case FPE_FLTSUB:
+			snprintf(details, sizeof details, "At %p, a float had an invalid subscript.", info->si_addr);
+			break;
+		}
 		break;
 	case SIGHUP:
 		perform_default = 1;
@@ -87,10 +126,44 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 	case SIGILL:
 		perform_default = 1;
 		crashno = 0x07;
+		switch (info->si_code){
+		case ILL_ILLOPC:
+			snprintf(details, sizeof details, "At %p, the program tried to use an illegal opcode.", info->si_addr);
+			break;
+		case ILL_ILLOPN:
+			snprintf(details, sizeof details, "At %p, the program tried to perform an instruction with an illegal operand.", info->si_addr);
+			break;
+		case ILL_ILLADR:
+			snprintf(details, sizeof details, "At %p, the program was in an illegal addressing mode.", info->si_addr);
+			break;
+		case ILL_ILLTRP:
+			snprintf(details, sizeof details, "At %p, the program performed an illegal trap.", info->si_addr);
+			break;
+		case ILL_PRVOPC:
+			snprintf(details, sizeof details, "At %p, the program tried to use a privleged opcode.", info->si_addr);
+			break;
+		case ILL_PRVREG:
+			snprintf(details, sizeof details, "At %p, the program tried to use a privleged register.", info->si_addr);
+			break;
+		case ILL_COPROC:
+			snprintf(details, sizeof details, "At %p, an error occurred in a coprocessor.", info->si_addr);
+			break;
+		case ILL_BADSTK: //bad stick!
+			snprintf(details, sizeof details, "At %p, something went wrong with the stack.", info->si_addr);
+			break;
+		}
 		break;
-	case SIGSEGV: /* Note to self:  make this do something unique. */
+	case SIGSEGV: /* Note to self:  make this do something unique when this code is ported to use a fancy proper window instead of an SDL messagebox. */
 		perform_default = 1;
 		crashno = 0x09;
+		switch (info->si_code){
+		case SEGV_MAPERR:
+			snprintf(details, sizeof details, "The address at %p is not mapped to anything.", info->si_addr);
+			break;
+		case SEGV_ACCERR:
+			snprintf(details, sizeof details, "The address at %p is mapped to something innaccessible.", info->si_addr);
+			break;
+		}
 		break;
 	case SIGSYS:
 		perform_default = 1;
@@ -102,7 +175,7 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 		crashno = 0x0A;
 	case SIGQUIT:
 		perform_default = 1;
-		crashno = 0x0B;
+		crashno = 0x08;
 	/* This could probably be used for something, but for now, it does nothing. */
 	case SIGINT:
 		goto nothing;
@@ -110,7 +183,7 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 		break;
 	}
 
-	char msg_box_msg[512];
+	char msg_box_msg[1024];
 	sprintf(msg_box_msg,
 			"A critical error has occured, and Gake has crashed!\n"
 			"\n"
@@ -126,7 +199,14 @@ void handler(int signo, [[maybe_unused]] siginfo_t * info, [[maybe_unused]] void
 			"\n"
 			"Would you like to save this crash report?\n",
 			crashno, crash_msgs[crashno], details, crashstr);
-	printf("[time] \e[41mCRITICAL\e[m\e[31m:  %s\e[m", msg_box_msg);
+
+	time_t the_time = time(NULL);
+	char time_str[64];
+	if (strftime(time_str, sizeof time_str, "%T", localtime(&the_time)) == 0){
+		sprintf(time_str, "??:??:??");
+	}
+
+	printf("[%s] \e[41mCRITICAL\e[m\e[31m:  %s\e[m", time_str, msg_box_msg);
 
 	SDL_MessageBoxButtonData buttons[2] = {
 		{ SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Just quit" },
