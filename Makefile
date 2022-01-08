@@ -45,7 +45,8 @@ install: Gake.elf
 		cp Gake.elf /usr/local/games/gake ;\
 		if [ ! -e /usr/local/share/Gake/ ] ;\
 			then mkdir -p /usr/local/share/Gake/Assets/ ; fi ;\
-		cp -r Assets/* /usr/local/share/Gake/Assets/ ;\
+		cp -r Assets/*.png /usr/local/share/Gake/Assets/ ;\
+		cp -r Assets/*.txt /usr/local/share/Gake/Assets/ ;\
 		if [ ! -e /usr/local/man/man6/ ] ;\
 			then mkdir -p /usr/local/man/man6/ ; fi ;\
 		cp Documentation/gake.6 /usr/local/man/man6/gake.6 ;\

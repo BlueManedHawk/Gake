@@ -12,18 +12,17 @@
 *
 * This license does not apply to trademarks or patents.
 *
-* THIS PRODUCT COMES WITH ABSOLUTELY NO WARRANTY, IMPLIED OR EXPLICIT, TO THE EXTENT PERMITTED BY LAW.  THE AUTHOR DISCLAIMS ANY LIABILITY FOR ANY DAMAGES OF ANY KIND CAUSED BY THIS PRODUCT, TO THE EXTENT PERMITTED BY LAW.*/
+* THIS PRODUCT COMES WITH ABSOLUTELY NO WARRANTY, IMPLIED OR EXPLICIT, TO THE EXTENT PERMITTED BY LAW.  THE AUTHOR DISCLAIMS ANY LIABILITY FOR ANY DAMAGES OF ANY KIND CAUSED BY THIS PRODUCT, TO THE EXTENT PERMITTED BY LAW. */
 
-/* This file will define debugging functions for Gake eventually.  Currently, it's just being used to test that the debug target in the Makefile actually works.
- *
- * When reading this file, you are expected to have access to and generally understand the following documents:
- * 	· Latest draft of C2x:  http://www.open-std.org/JTC1/SC22/WG14/www/docs/n2596.pdf
- * 	· The Clang compiler user(?) manual:  https://clang.llvm.org/docs/UsersManual.html
- * 	· Wikipedia page on ANSI escape codes:  https://en.wikipedia.org/wiki/ANSI_escape_code
- * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
+#ifndef CHECKS_H
+#define CHECKS_H
 
-#include "Logging.h"
+struct file_data {
+	unsigned long checksum;
+	size_t size;
+	char filename[256];
+};
 
-void debug_notice(void){
-	logmsg(lp_debug, lc_debug, "This is a DEBUG build of Gake.");
-}
+extern short run_checks(void);
+
+#endif

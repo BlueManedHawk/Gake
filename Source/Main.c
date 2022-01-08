@@ -40,6 +40,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "Debug.h"
+#include "Checks.h"
 
 int main(int argc, char ** argv)
 {
@@ -97,8 +98,20 @@ int main(int argc, char ** argv)
 	debug_notice();
 
 	logmsg(lp_debug, lc_checks, "Beginning checks…");
-	/* Preparation. */
-	//run_checks();
+	[[maybe_unused]] _Bool battery_checks = 0;
+	switch (run_checks()){
+	case -1:
+		battery_checks = 1;
+	case 0:
+		break;
+	case 1:
+	case 2:
+	case 3:
+		crash(0xC, "See the game log for details.");
+		break;
+	case 4:
+		crash(0xD, "No other details.");
+	}
 
 	halt_logging();
 }
