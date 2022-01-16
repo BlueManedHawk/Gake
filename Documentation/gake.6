@@ -1,36 +1,91 @@
-.TH GAKE 6 2021-11-06 "Blue-Maned_Hawk" "Gake Reference Manual"
+.TH GAKE 6 2021-01-08 "Blue-Maned_Hawk" "Gake Reference Manual"
 .SH NAME
 gake \- an open-source reimplementation of Google's snake game, with extensions.
 .SH SYNOPSIS
-.B gake
-[
-.B -v?h
-]
+.BR gake " [ " -v?h " ] [ " -l " <filename> ]"
 .SH CONFIGURATION
-Gake does not currently have any configuration features.  In the future, a config file may be located in $XDG_CONFIG_HOME/Gake/ (or $HOME/.config/Gake).
+Gake does not currently have any configuration features.  In the future, a config file may be located in
+.I $XDG_CONFIG_HOME/Gake/
+(or
+.IR $HOME/.config/Gake/ ).
 .SH DESCRIPTION
-Gake isn't currently anything.  In the future, it will be an open-source reimplementation of Google Snake, with some extensions.
+Gake isn't currently anything.  In the future, it will be an open-source reimplementation of Google Snake, with some extensions.  However, at the moment, it's just a 4×4 grid that you can click on to flip its cells.
+
+Gake has an API for programs to use.  An overview of this API is documented in the manpage
+.B gake-api(7)
+, which further connects to pages on the individual subroutines.
 .SH OPTIONS
+.B Important:  If you try to start Gake with any GNU-style options, the game will instantly crash.  This is intentional.
 .TP
 .BR \-v
 Displays the version of the program, then exits.
 .TP
 .BR \-h ", " \-?
 Displays a blurb of help, then exits.
+.TP
+.BI \-l " <filename>"
+Start with executing the `gake_main()` subroutine from the specified file.
 .SH EXIT STATUS
 Gake returns a 0 if everything went fine.  Gake returns a 1 when used with \-v or \-?, for compatibility with other programs.
 
 If Gake crashes, it will return a value ≥2, and will invoke a crash handler that will create an SDL messagebox giving a bit more explanation of the problem.  Currently, the exit codes are:
-.IP
-0x02:  User attempted to start the program with GNU-style options.
+.RS 8
+.TQ
+.B 0x02:
+User attempted to start the program with GNU-style options.
+.TQ
+.B 0x03:
+The process was aborted.
+.TQ
+.B 0x04:
+A bus error occured.
+.TQ
+.B 0x05:
+A floating-point exception occured.
+.TQ
+.B 0x06:
+The controlling terminal was closed.
+.TQ
+.B 0x07:
+An illegal instruction was attempted.
+.TQ
+.B 0x08:
+A graceful quit was requested.
+.TQ
+.B 0x09:
+A segmentation fault occurred.
+.TQ
+.B 0x0A:
+A termination request was sent.
+.TQ
+.B 0x0B:
+An invalid system call was made.
+.TQ
+.B 0x0C:
+The game's assets could not be verified.
+.TQ
+.B 0x0D:
+The user's computer didn't have enough battery left.
+.RE
 .SH ENVIRONMENT
-The XDG environmental variables will probably be used by Gake, if they are set.
+Gake reads from the XDG environment variables, and may read from the variable
+.IR $HOME .
+It does not write to any environmental variables.
 .SH FILES
 Gake is installed into
-.B /usr/local/bin/gake
+.BR /usr/local/bin/gake ", "
 and
-.B /usr/local/share/Gake/Assets/
-is where the assets are installed.
+.BR /usr/local/share/Gake/Assets/
+is where the assets are installed.  The API is installed into
+.BR /usr/local/lib/ ", "
+with the header
+.I "Gake.h"
+installed in
+.BR /usr/local/include/ "."
 .SH BUGS
 All bugs should be reported on the GitHub page for the project:
+.UR
 .I https://github.com/BlueManedHawk/Gake
+.UE
+.SH SEE ALSO
+.B gake-api(7)

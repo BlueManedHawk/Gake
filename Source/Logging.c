@@ -83,7 +83,16 @@ void halt_logging(void){
 }
 
 /* Note that `logmsg` assumes that you've sanitized the string before you log it. */
-[[gnu::format(printf, 3, 4)]] void logmsg(enum log_priority priority, enum log_category category, char * msg, ...){
+[[gnu::format(printf, 3, 4)]] void logmsg(enum log_priority priority, enum log_category category, char * msg, ...)
+{
+	va_list ap;
+	va_start(ap, msg);
+	vlogmsg(priority, category, msg, ap);
+	va_end(ap);
+}
+
+void vlogmsg(enum log_priority priority, enum log_category category, char * msg, va_list arg)
+{
 	char final_message[1024], time_str[64], priority_str[32], category_str[32];
 	switch (priority){
 	/* See `Logging.h`—this makes debug messages only show in debug builds. This is kinda a silly way to do it, but oh well. */
@@ -137,10 +146,7 @@ void halt_logging(void){
 	}
 
 	char formatted_msg[512];
-	va_list ap;
-	va_start(ap, msg);
-	vsnprintf(formatted_msg, 512, msg, ap);
-	va_end(ap);
+	vsnprintf(formatted_msg, 512, msg, arg);
 	snprintf(final_message, sizeof final_message, "[%s] %s (%s:)  %s\n", time_str, priority_str, category_str, formatted_msg);
 	fprintf(stderr, "%s", final_message);
 	if (logfile != NULL){ // Might not want to have this be checked every time this function is called, but I don't think there's a way around it.

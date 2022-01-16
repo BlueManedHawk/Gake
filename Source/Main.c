@@ -41,6 +41,7 @@
 #include <stdlib.h>
 #include "Debug.h"
 #include "Checks.h"
+#include <dlfcn.h>
 
 int main(int argc, char ** argv)
 {
@@ -63,7 +64,10 @@ int main(int argc, char ** argv)
 		sigaction(sigs_to_ign[i], &ign, NULL);
 	}
 
-	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-")){
+	void * api_using_prgm = NULL;
+	void (*aup_gake_main)(void) = NULL;
+	char * aup_name = NULL;
+	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-il:")){
 		switch (opts){
 		case 0:
 			break;
@@ -87,6 +91,20 @@ int main(int argc, char ** argv)
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
 			return 1; /* See above comment. */
+		case 'l':
+			if (aup_name != NULL){
+				logmsg(lp_err, lc_apiprgm, "Cannot load %s: you've already loaded a program.", optarg);
+				break;
+			}
+			aup_name = optarg;
+			api_using_prgm = dlopen(optarg, RTLD_LAZY | RTLD_LOCAL);
+			if (api_using_prgm == NULL) {
+				logmsg(lp_err, lc_apiprgm, "An error occurred while trying to open your program:  %s", dlerror());
+			} else if ((aup_gake_main = (void (*)(void))dlsym(api_using_prgm, "gake_main")) == NULL){
+				logmsg(lp_err, lc_apiprgm, "Your program does not have a function `gake_main()`, so it cannot be executed.  More information:  %s", dlerror());
+				api_using_prgm = NULL; /* No valid program has been loaded. */
+			}
+			break;
 		}
 	}
 
@@ -111,6 +129,11 @@ int main(int argc, char ** argv)
 		break;
 	case 4:
 		crash(0xD, "No other details.");
+	}
+	logmsg(lp_info, lc_checks, "All checks have passed!  Continuing as normal…");
+
+	if (api_using_prgm != NULL){
+		aup_gake_main();
 	}
 
 	halt_logging();

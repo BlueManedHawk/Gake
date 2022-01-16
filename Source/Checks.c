@@ -22,16 +22,19 @@
  * 	· Wikipedia page on ANSI escape codes:  https://en.wikipedia.org/wiki/ANSI_escape_code
  * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "SDL.h"
 #include "zlib.h"
 #include "Checks.h"
 #include "Logging.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static const struct file_data files_list[2] = {
 	{0x9da81fc6, 443, "/usr/local/share/Gake/Assets/Textures.png"},
-	{0, 241, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
+	{0, 702, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
 };
 
 short run_checks(void)
@@ -64,6 +67,41 @@ short run_checks(void)
 	}
 	logmsg(lp_info, lc_checks, "All assets have been verified!");
 
+	char * logsplash = NULL;
+	int nlcount = 0;
+	int character = 0;
+	FILE * splashfile = fopen("/usr/local/share/Gake/Assets/Log_Splashes.txt", "r");
+	if (splashfile == NULL){
+fail:
+		logmsg(lp_info, lc_checks, "\e[38;2;255;255;128mFailing to find a log splash…\e[m");
+	} else {
+		size_t len = 0;
+		fseek(splashfile, 0, SEEK_SET);
+		for (register int i = 0; (character = fgetc(splashfile)) != EOF; i++)
+			(character == '\n') ? nlcount++ : ((void)0);
+
+		FILE * random = fopen("/dev/urandom", "rb");
+		long long randnum[1];
+		fread(randnum, sizeof (long long), (sizeof randnum) / sizeof (long long), random);
+		fclose(random);
+		int line = randnum[0] % nlcount;
+
+		fseek(splashfile, 0, SEEK_SET);
+		for (register int i = 0; i < line; i++){
+			getline(&logsplash, &len, splashfile);
+		}
+		if (logsplash == NULL)
+			goto fail;
+
+		char * nl;
+		if ((nl = strchr(logsplash, '\n')) != NULL)
+			*nl = ' ';
+
+		logmsg(lp_info, lc_checks, "\e[38;2;255;255;128m%s\e[m", logsplash);
+	}
+	free(logsplash);
+	fclose(splashfile);
+
 	int secs, pct;
 	SDL_PowerState power = SDL_GetPowerInfo(&secs, &pct);
 	switch (power){
@@ -87,4 +125,5 @@ short run_checks(void)
 		logmsg(lp_info, lc_checks, "Battery is fine.");
 		return -1;
 	}
+
 }

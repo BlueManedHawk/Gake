@@ -35,7 +35,9 @@ enum log_category {
 	lc_misc = 1,
 	lc_debug = 2,
 	lc_env = 3,
-	lc_checks = 4
+	lc_checks = 4,
+	lc_api = 5,
+	lc_apiprgm = 6,
 	/* More categories will prove necessary. */
 };
 
@@ -43,5 +45,6 @@ extern void setup_logging(void);
 extern void halt_logging(void);
 /* Keep in mind that this function is not sanitized—you'll need to do that yourself. */
 extern void logmsg(enum log_priority priority, enum log_category category, char * msg, ...);
+extern void vlogmsg(enum log_priority priority, enum log_category category, char * msg, va_list arg);
 
 #endif/*ndef LOGGING_H*/
