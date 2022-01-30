@@ -66,7 +66,7 @@ _debug_api: $(API_OBJ_D)
 
 # I'm aware that this checks if the directories exists every time, but I think that the time benefit from restructuring it to not do that would be too small to be useful.  Also, yeah, it would be nice to simplify the manpage installation process, but since there aren't too many manpages right now, I think that can wait.
 
-install: Gake.elf
+install: Gake.elf _install_manpages #libgake.so
 	@if [ $$USER = root ] ; then\
 		cp Gake.elf /usr/local/games/gake ;\
 		cp libgake.so /usr/local/lib/libgake.so ;\
@@ -75,15 +75,23 @@ install: Gake.elf
 			then mkdir -p /usr/local/share/Gake/Assets/ ; fi ;\
 		cp -r Assets/*.png /usr/local/share/Gake/Assets/ ;\
 		cp -r Assets/*.txt /usr/local/share/Gake/Assets/ ;\
+	else echo "You can only install Gake as root!" ; fi
+
+_install_manpages: _install_man7pages
+	@if [ $$USER = root ] ; then\
 		if [ ! -e /usr/local/man/man6/ ] ;\
 			then mkdir -p /usr/local/man/man6/ ; fi ;\
 		cp Documentation/gake.6 /usr/local/man/man6/gake.6 ;\
-		gzip /usr/local/man/man6/gake.6 ; \
+		gzip -9f /usr/local/man/man6/gake.6 ;\
+	fi
+
+_install_man7pages: $(wildcard Documentation/*.7)
+	@if [ $$USER = root ] ; then\
 		if [ ! -e /usr/local/man/man7/ ] ;\
 			then mkdir -p /usr/local/man/man7/ ; fi ;\
-		cp Documentation/gake-api.7 /usr/local/man/man7/gake-api.7 ; \
-		gzip /usr/local/man/man7/gake-api.7 ; \
-	else echo "You can only install Gake as root!" ; fi
+		cp $^ /usr/local/man/man7/ ; \
+		gzip -9f $(subst Documentation/,/usr/local/man/man7/,$^) ; \
+	fi
 
 clean: $(GME_OBJ_R) $(GME_OBJ_D) $(API_OBJ_R) $(API_OBJ_D)
 	rm $^

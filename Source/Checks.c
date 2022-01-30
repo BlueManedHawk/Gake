@@ -34,7 +34,7 @@
 
 static const struct file_data files_list[2] = {
 	{0x9da81fc6, 443, "/usr/local/share/Gake/Assets/Textures.png"},
-	{0, 702, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
+	{0, 1011, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
 };
 
 short run_checks(void)

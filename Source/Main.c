@@ -42,31 +42,28 @@
 #include "Debug.h"
 #include "Checks.h"
 #include <dlfcn.h>
+#include "SDL.h"
 
 int main(int argc, char ** argv)
 {
 
-	struct sigaction act = {
+	const struct sigaction act = {
 		.sa_sigaction = handler,
 		.sa_mask = { 0 },
 		.sa_flags = SA_SIGINFO
 	};
-	/* If you ever need to update these, be certain that the terminating zeros remain. */
-	int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS, 0};
-	int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM, 0};
-	for (register int i = 0; sigs_to_handle[i] != 0; i++){
-		sigaction(sigs_to_handle[i], &act, NULL);
-	}
-	struct sigaction ign = {
+	const struct sigaction ign = {
 		.sa_handler = SIG_IGN
 	};
-	for (register int i = 0; sigs_to_ign[i] != 0; i++){
+	const int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS};
+	const int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM};
+	for (register unsigned int i = 0; i < (sizeof (sigs_to_handle) / sizeof (int)); i++){
+		sigaction(sigs_to_handle[i], &act, NULL);
+	}
+	for (register unsigned int i = 0; i < (sizeof (sigs_to_ign) / sizeof (int)); i++){
 		sigaction(sigs_to_ign[i], &ign, NULL);
 	}
 
-	void * api_using_prgm = NULL;
-	void (*aup_gake_main)(void) = NULL;
-	char * aup_name = NULL;
 	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-il:")){
 		switch (opts){
 		case 0:
@@ -91,20 +88,6 @@ int main(int argc, char ** argv)
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
 			return 1; /* See above comment. */
-		case 'l':
-			if (aup_name != NULL){
-				logmsg(lp_err, lc_apiprgm, "Cannot load %s: you've already loaded a program.", optarg);
-				break;
-			}
-			aup_name = optarg;
-			api_using_prgm = dlopen(optarg, RTLD_LAZY | RTLD_LOCAL);
-			if (api_using_prgm == NULL) {
-				logmsg(lp_err, lc_apiprgm, "An error occurred while trying to open your program:  %s", dlerror());
-			} else if ((aup_gake_main = (void (*)(void))dlsym(api_using_prgm, "gake_main")) == NULL){
-				logmsg(lp_err, lc_apiprgm, "Your program does not have a function `gake_main()`, so it cannot be executed.  More information:  %s", dlerror());
-				api_using_prgm = NULL; /* No valid program has been loaded. */
-			}
-			break;
 		}
 	}
 
@@ -132,9 +115,111 @@ int main(int argc, char ** argv)
 	}
 	logmsg(lp_info, lc_checks, "All checks have passed!  Continuing as normal…");
 
-	if (api_using_prgm != NULL){
-		aup_gake_main();
+	SDL_Init(SDL_INIT_VIDEO);
+	SDL_Window * window = SDL_CreateWindow("Gake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, 0);
+	SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
+
+	SDL_Event event;
+	_Bool quit = 0;
+	struct {
+		int x;
+		int y;
+		_Bool unhandled;
+	} click = {
+		.x = 0,
+		.y = 0,
+		.unhandled = 0
+	};
+	_Bool squares[4][4] = {
+		{0, 0, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0},
+		{0, 0, 0, 0}
+	};
+	SDL_Rect rect = {
+		.w = 640 / 4,
+		.h = 480 / 4
+	};
+	long long ticks = 0;
+	int over_frames = 0;
+
+	for (;;){
+		ticks = SDL_GetTicks64(); /* Should use `SDL_GetTicks64()`, but my distro doesn't supply the latest version of SDL—sorry! */
+		/* May want to put this in a separate subroutine. */
+		while (SDL_PollEvent(&event)){
+			switch (event.type){
+			case SDL_QUIT:
+				quit++;
+				break;
+			case SDL_MOUSEBUTTONDOWN:
+				if (event.button.button == SDL_BUTTON_LEFT){
+					click.x = event.button.x;
+					click.y = event.button.y;
+					click.unhandled++;
+				}
+				break;
+			}
+		}
+		if (quit) break;
+
+		/* Could this be put in a separate subroutine?  Yeah, but this is just a placeholder, so whatever. */
+		if (click.unhandled){
+			short x;
+			short y;
+			const short x4 = 640/4;
+			const short y4 = 480/4;
+
+			if (click.x >= 0 && click.x < x4) x = 0;
+			else if (click.x >= x4 && click.x < (x4 * 2)) x = 1;
+			else if (click.x >= (x4 * 2) && click.x < (x4 * 3)) x = 2;
+			else x = 3;
+
+			if (click.y >= 0 && click.y < y4) y = 0;
+			else if (click.y >= y4 && click.y < (y4 * 2)) y = 1;
+			else if (click.y >= (y4 * 2) && click.y < (y4 * 3)) y = 2;
+			else y = 3;
+
+			squares[x][y] = !squares[x][y];
+			click.unhandled = 0;
+		}
+
+		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+		SDL_RenderClear(renderer);
+
+		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+		for (int x = 0; x < 4; x++){
+			for (int y = 0; y < 4; y++){
+				if (squares[x][y] == 0){
+					const short x4 = 640/4;
+					const short y4 = 480/4;
+					rect.x = x4 * x;
+					rect.y = y4 * y;
+					SDL_RenderFillRect(renderer, &rect);
+				}
+			}
+		}
+
+		SDL_RenderPresent(renderer);
+
+		if ((SDL_GetTicks64() - ticks) > 27){
+			over_frames++;
+			if (over_frames % 36 == 0){
+				logmsg(lp_note, lc_env, "Slowdown detected.  Continued slowdown could result in a crash.");
+			}
+			if (over_frames > 360){
+				crash(0x0E, "No extra information.");
+			}
+		} else if (over_frames > 0){
+			over_frames--;
+		}
 	}
+
+	logmsg(lp_info, lc_misc, "Exiting Gake…");
+
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);
+
+	SDL_Quit();
 
 	halt_logging();
 }

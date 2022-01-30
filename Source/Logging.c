@@ -135,6 +135,12 @@ void vlogmsg(enum log_priority priority, enum log_category category, char * msg,
 	case lc_checks:
 		sprintf(category_str, "Runtime checks");
 		break;
+	case lc_api:
+		sprintf(category_str, "API");
+		break;
+	case lc_apiprgm:
+		sprintf(category_str, "API-using program");
+		break;
 	default:
 		sprintf(category_str, "Unknown category");
 		break;

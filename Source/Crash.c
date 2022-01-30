@@ -51,7 +51,8 @@ static const char crash_msgs[16][128] = {
 	/*0x0A*/"Termination request sent to program.",
 	/*0x0B*/"An invalid system call was made.",
 	/*0x0C*/"The game's assets could not be verified.",
-	/*0x0D*/"Your system does not have enough battery left."
+	/*0x0D*/"Your system does not have enough battery left.",
+	/*0x0E*/"Your system is too slow.  The game has been crashed to prevent cheating."
 };
 
 [[gnu::format(printf, 2, 3)]] void crash(uint8_t code, char * info, ...)
