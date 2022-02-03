@@ -23,47 +23,63 @@
  * 	· The latest POSIX specification:  https://pubs.opengroup.org/onlinepubs/9699919799/mindex.html */
 
 #define _POSIX_C_SOURCE 200809L
+#define GCRYPT_NO_DEPRECATED
 
 #include "SDL.h"
-#include "zlib.h"
 #include "Checks.h"
 #include "Logging.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <gcrypt.h> /* TODO: I'm not happy about the usage of GNU stuff, especially a package as bloated as this one. */
+#include <string.h>
 
 static const struct file_data files_list[2] = {
-	{0x9da81fc6, 443, "/usr/local/share/Gake/Assets/Textures.png"},
-	{0, 1011, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
+	{{0x8277519b0267bc80, 0x46b8fb577867402d, 0x9866eb94bb6592f7, 0x3d588676681a8e5a, 0xa1af99a4767c7378, 0xf758ade27bffe5c4, 0x2f961c59d1748173, 0xe6d39fd96d567188}, 443, "/usr/local/share/Gake/Assets/Textures.png"},
+	{{0xa113426f46a6f4af, 0x31d40cc01bff5d4e, 0x869e2b7125c1b4eb, 0xee6310af15fa62fa, 0x4eb603f62b704989, 0xcfac3259dd73dfe6, 0x4cac050668aacdb0, 0x6db27594431ec600}, 1430, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
 };
 
 short run_checks(void)
 {
 	logmsg(lp_debug, lc_checks, "Verifying assets…");
 	uint8_t buf[0xFFF];
+	memset(buf, 0, sizeof buf);
 	FILE * file;
-	[[maybe_unused]] unsigned long checksum;
+	long long checksum[8];
 	size_t size;
+	_Bool errors = 0;
 	for (register unsigned i = 0; i < ((sizeof files_list) / (sizeof (struct file_data))); i++){
 		logmsg(lp_debug, lc_checks, "Testing asset %s…", files_list[i].filename);
 		if ((file = fopen(files_list[i].filename, "rb")) == NULL){
 			logmsg(lp_err, lc_checks, "File %s does not exist.", files_list[i].filename);
-			return 1;
-		}
-		if ((size = fread(buf, sizeof (uint8_t), (sizeof buf) / (sizeof (uint8_t)), file)) != files_list[i].size){
+			errors = 1;
+		} else if ((size = fread(buf, sizeof (uint8_t), (sizeof buf) / (sizeof (uint8_t)), file)) != files_list[i].size){
 			logmsg(lp_err, lc_checks, "Expected file %s to have size %zd, but got size %zd.", files_list[i].filename, files_list[i].size, size);
-			return 2;
+			errors = 1;
+		} else {
+			gcry_md_hash_buffer(GCRY_MD_SHA3_512, &checksum, &buf, sizeof buf);
+			if (memcmp(checksum, files_list[i].checksum, sizeof checksum)){
+				char realsum_str[129] = "";
+				char badsum_str[129] = "";
+				char sect[16];
+				for (register size_t j = 0; j < ((sizeof checksum) / sizeof (long long)); j++){
+					sprintf(sect, "%llx", checksum[j]);
+					strcat(badsum_str, sect);
+				}
+				for (register size_t j = 0; j < ((sizeof files_list[i].checksum) / sizeof (long long)); j++){
+					sprintf(sect, "%llx", files_list[i].checksum[j]);
+					strcat(realsum_str, sect);
+				}
+				logmsg(lp_err, lc_checks, "Expected file %s to have checksum %s, but got checksum %s.", files_list[i].filename, realsum_str, badsum_str);
+				errors = 1;
+			}
 		}
-		/* FIXME: This isn't working, and I have no idea why.*/
-		/*
-		checksum = adler32(0L, NULL, 0);
-		checksum = adler32(checksum, buf, (sizeof buf) / (sizeof (uint8_t)));
-		if (checksum != files_list[i].checksum){
-			logmsg(lp_err, lc_checks, "Expected file %s to have checksum %lx, but got checksum %lx.", files_list[i].filename, files_list[i].checksum, checksum);
-			return 3;
-		}
-		*/
 		fclose(file);
+		memset(buf, 0, sizeof buf);
+	}
+	if (errors){
+		logmsg(lp_err, lc_checks, "Assets could not be verified.  Crashing now…");
+		return 1;
 	}
 	logmsg(lp_info, lc_checks, "All assets have been verified!");
 
@@ -117,7 +133,7 @@ fail:
 			goto unknown;
 		} else if ((secs < 900) || (pct < 15)){
 			logmsg(lp_err, lc_checks, "User does not have enough battery left!");
-			return 4;
+			return 2;
 		}
 		[[fallthrough]];
 	case SDL_POWERSTATE_CHARGING:

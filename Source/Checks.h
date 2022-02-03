@@ -18,7 +18,7 @@
 #define CHECKS_H
 
 struct file_data {
-	unsigned long checksum;
+	long long checksum[8];
 	size_t size;
 	char filename[256];
 };

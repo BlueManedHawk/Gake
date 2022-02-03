@@ -17,17 +17,14 @@ endif
 
 SHELL = /bin/bash
 CC = clang-13
-CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
+CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` ` libgcrypt-config --cflags `# `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
 CFLAGS_R = -O3
 CFLAGS_D = -O0 -DGAKE_DEBUG -glldb
-LDFLAGS = ` sdl2-config --libs ` -lz -ldl
+LDFLAGS = ` sdl2-config --libs ` -lz -ldl ` libgcrypt-config --libs `
 # Might be possible to make this less repetitive.
-GME_SRC = $(wildcard Source/*.c)
-API_SRC = $(wildcard API/*.c)
-GME_OBJ_R = $(GME_SRC:.c=_r.o)
-GME_OBJ_D = $(GME_SRC:.c=_d.o)
-API_OBJ_R = $(API_SRC:.c=_r.o)
-API_OBJ_D = $(API_SRC:.c=_d.o)
+SRC = $(wildcard Source/*.c)
+OBJ_R = $(SRC:.c=_r.o)
+OBJ_D = $(SRC:.c=_d.o)
 
 help:
 	@sh -c 'echo "Available targets for Gake are:\n"\
@@ -48,29 +45,17 @@ help:
 %_d.o: %.c
 	$(CC) $(CFLAGS) $(CFLAGS_D) -c $< -o $@
 
-release: _release_game _release_api
-
-_release_game: $(GME_OBJ_R)
+release: $(OBJ_R)
 	$(CC) $(LDFLAGS) $^ -o Gake.elf
 
-_release_api: $(API_OBJ_R)
-	$(CC) $(LDFLAGS) $^ -o libgake.so
-
-debug: _debug_game _debug_api
-
-_debug_game: $(GME_OBJ_D)
+debug: $(OBJ_D)
 	$(CC) $(LDFLAGS) $^ -o Gake.elf
-
-_debug_api: $(API_OBJ_D)
-	$(CC) $(LDFLAGS) $^ -o libgake.so
 
 # I'm aware that this checks if the directories exists every time, but I think that the time benefit from restructuring it to not do that would be too small to be useful.  Also, yeah, it would be nice to simplify the manpage installation process, but since there aren't too many manpages right now, I think that can wait.
 
 install: Gake.elf _install_manpages #libgake.so
 	@if [ $$USER = root ] ; then\
 		cp Gake.elf /usr/local/games/gake ;\
-		cp libgake.so /usr/local/lib/libgake.so ;\
-		cp ./API/Gake.h /usr/local/include/Gake.h ;\
 		if [ ! -e /usr/local/share/Gake/ ] ;\
 			then mkdir -p /usr/local/share/Gake/Assets/ ; fi ;\
 		cp -r Assets/*.png /usr/local/share/Gake/Assets/ ;\
@@ -93,6 +78,6 @@ _install_man7pages: $(wildcard Documentation/*.7)
 		gzip -9f $(subst Documentation/,/usr/local/man/man7/,$^) ; \
 	fi
 
-clean: $(GME_OBJ_R) $(GME_OBJ_D) $(API_OBJ_R) $(API_OBJ_D)
+clean: $(OBJ_R) $(OBJ_D)
 	rm $^
 	if [ -e Gake.elf ] ; then rm Gake.elf ; fi

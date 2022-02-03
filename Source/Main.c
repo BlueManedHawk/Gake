@@ -55,12 +55,12 @@ int main(int argc, char ** argv)
 	const struct sigaction ign = {
 		.sa_handler = SIG_IGN
 	};
-	const int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS};
-	const int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM};
-	for (register unsigned int i = 0; i < (sizeof (sigs_to_handle) / sizeof (int)); i++){
+	const int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS, 0};
+	const int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM, 0};
+	for (register unsigned int i = 0; sigs_to_handle[i] != 0; i++){
 		sigaction(sigs_to_handle[i], &act, NULL);
 	}
-	for (register unsigned int i = 0; i < (sizeof (sigs_to_ign) / sizeof (int)); i++){
+	for (register unsigned int i = 0; sigs_to_ign[i] != 0; i++){
 		sigaction(sigs_to_ign[i], &ign, NULL);
 	}
 
@@ -106,11 +106,9 @@ int main(int argc, char ** argv)
 	case 0:
 		break;
 	case 1:
-	case 2:
-	case 3:
 		crash(0xC, "See the game log for details.");
 		break;
-	case 4:
+	case 2:
 		crash(0xD, "No other details.");
 	}
 	logmsg(lp_info, lc_checks, "All checks have passed!  Continuing as normal…");
@@ -144,7 +142,7 @@ int main(int argc, char ** argv)
 	int over_frames = 0;
 
 	for (;;){
-		ticks = SDL_GetTicks64(); /* Should use `SDL_GetTicks64()`, but my distro doesn't supply the latest version of SDL—sorry! */
+		ticks = SDL_GetTicks64();
 		/* May want to put this in a separate subroutine. */
 		while (SDL_PollEvent(&event)){
 			switch (event.type){
