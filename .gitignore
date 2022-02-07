@@ -1,4 +1,2 @@
 Source/*.o
-API/*.o
 *.elf
-*.so

@@ -12,6 +12,8 @@ This software links to zlib, copyrighted by Jean-loup Gailly and Mark Adler, whi
 
 This software dynamically links to SDL2, copyrighted by Sam Lantinga, which is under a different instance of the zlib license, available at https://libsdl.org/license.php.
 
+This software dynamically links to libgcrypt, coprighted by the Free Software Foundation, which is licensed under version 2.1+ of the Lesser GNU General Public License.
+
 The assets for this software are copylefted.  You may freely use them for any purpose, to the extent permitted by law, so long as you do not attempt to claim that such use is condoned by the author.  You may freely distribute the assets, to the extent permitted by law, so long as you make this license clearly and easily available, and you do not attempt to claim that such distribution is condoned by the author.  You may freely modify the assets and distribute such modified versions, to the extent permitted by law, so long as you put such modifications under a license that grants the same rights as this one under the same conditions and with the same restrictions, and you do not attempt to claim that the modified assets are the original assets or that such modifications are condoned by the author.
 
 Neither of these licenses apply to trademarks or patents.

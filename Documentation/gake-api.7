@@ -2,106 +2,65 @@
 .SH NAME
 gake-api \- an overview of the API for Gake
 .SH SYNOPSIS
-In your program:
+In your program, write:
 .RS 8
-.B #include """Gake.h"""
 .TQ
-.B void gake_main(void);
+.B include """gake.h"""
+.TQ
+.B struct gake_newstate gake_main(struct gake_curstate state);
 .RE
-.P
-(note that that's
-.I you
-defining
-.B gake_main()
-there).
-
-To compile:
+.PP
+Then, compile:
 .IP
-.B clang-13 -shared -lgake Your.c Files.c Here.c -o Output.so
-.P
-To start with the file (you will also be able select it in-game eventually):
+.BI "cc -shared " "Your.c Files.c Here.c" " -o" " Whatever.so"
+.PP
+Then, run:
 .IP
-.BI "gake -l " <filename>
+.BI "gake -l " "Whatever.so"
 .SH DESCRIPTION
-.SS Overview
-Programs that take advantage of the API of Gake work by compiling a program into a shared object that links against
-.IR libgake.so "; "
-this shared object that you compile contains a subroutine
+Gake was primarily designed as a tool to determine algorithmic solutions to various extensions to the basic game of Snake.  The API of Gake will allow anyone to construct their own solutions to the problems, although currently, as the game is just a grid of squares to turn on and off, all that the API can do is read from and write to the grid.
+.PP
+To write a program using the Gake API, you need to create a C file with a subroutine
 .I gake_main()
-that is executed by Gake.  This subroutine (presumably) calls the subroutines in libgake to open a pipe to Gake for communication, through which specific types of data will be sent.
-.SS Compiling and using
-Within your program, you will need to include the file
-.I "Gake.h"
-to make the declarations visible.  You can then compile it with the
-.BR -shared " and " -lgake
-options on your compiler (or whatever your equivalents are).
-
-Eventually, it will be possible to select the program from within the game, but for now, you need to use the
-.B -l
-option with the filename you want to load the file on start.
-.SS The grid
-Currently, the only thing implemented in Gake is a 4x4 grid.  The user may click on cells in this grid to turn them on or off.  The API can read from and write to this grid with the functions
-.BR gake_gread() " and " gake_gwrite() .
-.SH TYPES
-.SS enum gake_log_priority;
-This enum contains the following members:
-
+in it;  this subroutine must accept a structure
+.I gake_curstate
+as its sole argument and return a structure
+.IR gake_newstate .
+These structures are defined in the header
+.IR gake.h ,
+or you could define them yourself.  (Languages besides C might be supported in the future.)
+.PP
+The structures contain the following members:
+.PP
+.B struct gake_curstate {
 .RS 8
 .TQ
-.I gake_lp_debug
+.B _Bool grid[4][4];
 .TQ
-.I gake_lp_info
-.TQ
-.I gake_lp_note
-.TQ
-.I gake_lp_warn
-.TQ
-.I gake_lp_err
+.B const char * keys;
 .RE
-
-Messages of priority
-.I gake_lp_debug
-will only show up in debug builds.  There is no
-.I gake_lp_critical
-because API-using programs cannot intentionally crash Gake.
-.SS enum gake_log_category;
-This enum contains the following members:
-
+.B }
+.PP
+.B struct gake_newstate {
 .RS 8
 .TQ
-.I gake_lc_misc
-.TQ
-.I gake_lc_debug
-.TQ
-.I gake_lc_env
-.TQ
-.I gake_lc_checks
+.B _Bool grid[4][4];
 .RE
-.SH SUBROUTINES
-Note:  Some of these will have their own manpages in section 3—whenever this is the case, it will be explicitly stated.
-.SS _Bool gake_init(void);
-This must be called prior to using any other functions.  Internally, this sets up a pipe between libgake and Gake through which information will be sent.  This returns 0 if it succeeds and 1 if it fails for some reason.
-.SS void gake_exit(void);
-Does not exit gake.  Instead, this shuts down the API.  API subroutines besides
-.I gake_init();
-should not be used after this is used.
-.SS void gake_log(enum gake_log_priority, enum gake_log_category, char * msg, ...);
-.IP
-See also `gake_log_priority` and `gake_log_category` under the heading `TYPES`.
-.P
-This logs a message with the specified priority in the specified category to the Gake log.
-.B Note:
-this
-.I will
-explicitly state that it's your program sending this message, and not a normal thing in Gake.  This function uses printf formatting codes.
-.SS _Bool ** gake_gread(void);
-This function returns a 4x4 array of booleans.  A 1 indicates a filled cell, and a 0 indicates an unfilled cell.  This returns NULL if it fails.
-.SS _Bool gake_gwrite(short x, short y, _Bool value);
-Writes the specified value to the grid.  This returns 1 if it fails, and 0 if it doesn't.
-.SH BUGS
+.B }
+.PP
+Your subroutine will be called after the game has handled input and updated the grid accordingly, but before it has rendered to the screen.  It will take the
+.I grid
+in the structure you return and set the real grid to that grid.  (Note that the grid your program recieves may already have been tampered with by other programs that were loaded before yours.)
+.PP
+The structure you recieve will also contain a string containing all of the keys pressed that frame.  Your program may use this information however it wishes.
+.SH REPORTING BUGS
 All bugs should be reported on the GitHub page for the project:
 .UR
 .I https://github.com/BlueManedHawk/Gake
 .UE
+.SH COPYRIGHT
+This API is Copyright © 2021, 2022 Blue-Maned_Hawk;
+.B however, programs that you make using the API are entirely your own.
+However, I strongly encourage you to copyleft them, as I have done with this API.  Full licensing information is available in the LICENSE file that should have been supplied with this software).  This manpage is under the same license as described there.
 .SH SEE ALSO
 .B gake(6)

@@ -17,7 +17,7 @@ endif
 
 SHELL = /bin/bash
 CC = clang-13
-CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` ` libgcrypt-config --cflags `# `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
+CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` ` libgcrypt-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
 CFLAGS_R = -O3
 CFLAGS_D = -O0 -DGAKE_DEBUG -glldb
 LDFLAGS = ` sdl2-config --libs ` -lz -ldl ` libgcrypt-config --libs `
@@ -60,6 +60,7 @@ install: Gake.elf _install_manpages #libgake.so
 			then mkdir -p /usr/local/share/Gake/Assets/ ; fi ;\
 		cp -r Assets/*.png /usr/local/share/Gake/Assets/ ;\
 		cp -r Assets/*.txt /usr/local/share/Gake/Assets/ ;\
+		cp gake.h /usr/local/include/gake.h ;\
 	else echo "You can only install Gake as root!" ; fi
 
 _install_manpages: _install_man7pages
@@ -78,6 +79,6 @@ _install_man7pages: $(wildcard Documentation/*.7)
 		gzip -9f $(subst Documentation/,/usr/local/man/man7/,$^) ; \
 	fi
 
-clean: $(OBJ_R) $(OBJ_D)
-	rm $^
+clean:
+	rm $(OBJ_R) $(OBJ_D) ;
 	if [ -e Gake.elf ] ; then rm Gake.elf ; fi
