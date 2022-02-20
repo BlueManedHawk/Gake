@@ -37,21 +37,21 @@
 #include <stdlib.h>
 #include <gcrypt.h> /* TODO: I'm not happy about the usage of GNU stuff, especially a package as bloated as this one. */
 #include <string.h>
+#include <stdbool.h>
 
 static const struct file_data files_list[2] = {
 	{{0x8277519b0267bc80, 0x46b8fb577867402d, 0x9866eb94bb6592f7, 0x3d588676681a8e5a, 0xa1af99a4767c7378, 0xf758ade27bffe5c4, 0x2f961c59d1748173, 0xe6d39fd96d567188}, 443, "/usr/local/share/Gake/Assets/Textures.png"},
-	{{0xa113426f46a6f4af, 0x31d40cc01bff5d4e, 0x869e2b7125c1b4eb, 0xee6310af15fa62fa, 0x4eb603f62b704989, 0xcfac3259dd73dfe6, 0x4cac050668aacdb0, 0x6db27594431ec600}, 1430, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
+	{{0xca19a88b98f18c9d, 0x64071c594d5ff2a8, 0x998f3ed76494626a, 0x8eb5f88388eb05d9, 0x4135c3fc843350ea, 0xd58d2a2beac843fa, 0x20c3e97bfb71d39b, 0x9eb27807e2c5993e}, 1959, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
 };
 
 short run_checks(void)
 {
 	logmsg(lp_debug, lc_checks, "Verifying assets…");
-	uint8_t buf[0xFFF];
-	memset(buf, 0, sizeof buf);
+	uint8_t buf[0xFFF] = {};
 	FILE * file;
 	long long checksum[8];
 	size_t size;
-	_Bool errors = 0;
+	bool errors = 0;
 	for (register unsigned i = 0; i < ((sizeof files_list) / (sizeof (struct file_data))); i++){
 		logmsg(lp_debug, lc_checks, "Testing asset %s…", files_list[i].filename);
 		if ((file = fopen(files_list[i].filename, "rb")) == NULL){

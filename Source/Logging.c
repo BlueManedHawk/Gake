@@ -32,17 +32,25 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <time.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include "zlib.h" /* zlib's documentation is available at https://zlib.net/manual.html, but this program only uses the GZip file stuff and the CRC thingies. */
+#include "zlib.h" /* zlib's documentation is available at https://zlib.net/manual.html, but this program only uses the GZip file stuffs. */
 #include <errno.h>
 #include <sys/stat.h>
 #include <dirent.h>
 
 static gzFile logfile = NULL;
+static const char categories[8][64] = {
+	"Miscellaneous",
+	"Debugging Systems",
+	"Environment",
+	"Runtime Checks",
+	"API",
+	"API-Using Programs"
+};
 
-void setup_logging(void){
+void setup_logging(void)
+{
 	char logfilename[128];
 	char time_str[64];
 	time_t the_time = time(NULL);
@@ -82,7 +90,8 @@ void setup_logging(void){
 	logfile = gzopen(logfilename, "wb9");
 }
 
-void halt_logging(void){
+void halt_logging(void)
+{
 	gzclose(logfile);
 }
 
@@ -125,30 +134,7 @@ void vlogmsg(enum log_priority priority, enum log_category category, char * msg,
 		break;
 	}
 
-	/* FIXME: This could probably be done a little more efficiently if it were to use something like a pair of arrays.  Might be a bit more difficult to maintain, though. */
-	switch (category){
-	case lc_misc:
-		sprintf(category_str, "Miscellaneous");
-		break;
-	case lc_debug:
-		sprintf(category_str, "Debugging systems");
-		break;
-	case lc_env:
-		sprintf(category_str, "Host environment");
-		break;
-	case lc_checks:
-		sprintf(category_str, "Runtime checks");
-		break;
-	case lc_api:
-		sprintf(category_str, "API");
-		break;
-	case lc_apiprgm:
-		sprintf(category_str, "API-using program");
-		break;
-	default:
-		sprintf(category_str, "Unknown category");
-		break;
-	}
+	sprintf(category_str, "%s", categories[category]);
 
 	time_t the_time = time(NULL);
 	if (strftime(time_str, 64, "%T", localtime(&the_time)) == 0){

@@ -37,13 +37,13 @@ enum log_priority {
 };
 
 enum log_category {
-	lc_misc = 1,
-	lc_debug = 2,
-	lc_env = 3,
-	lc_checks = 4,
-	lc_api = 5,
-	lc_apiprgm = 6,
-	/* More categories will prove necessary. */
+	lc_misc = 0,
+	lc_debug = 1,
+	lc_env = 2,
+	lc_checks = 3,
+	lc_api = 4,
+	lc_apiprgm = 5,
+	/* More categories will prove necessary.  If you add a new category here, be sure to update the list in `Source/Logging.c`, too. */
 };
 
 extern void setup_logging(void);

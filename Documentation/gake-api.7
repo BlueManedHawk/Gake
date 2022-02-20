@@ -18,7 +18,7 @@ Then, run:
 .IP
 .BI "gake -l " "Whatever.so"
 .SH DESCRIPTION
-Gake was primarily designed as a tool to determine algorithmic solutions to various extensions to the basic game of Snake.  The API of Gake will allow anyone to construct their own solutions to the problems, although currently, as the game is just a grid of squares to turn on and off, all that the API can do is read from and write to the grid.
+Gake was primarily designed as a tool to determine algorithmic solutions to various extensions to the basic game of Snake.  The API of Gake will allow anyone to construct their own solutions to the problems, although currently, there's nothing in the game for the programs to interact with.
 .PP
 To write a program using the Gake API, you need to create a C file with a subroutine
 .I gake_main()
@@ -35,24 +35,22 @@ The structures contain the following members:
 .B struct gake_curstate {
 .RS 8
 .TQ
-.B _Bool grid[4][4];
+.B long long frame;
 .TQ
-.B const char * keys;
+.B const char keys[];
 .RE
 .B }
 .PP
 .B struct gake_newstate {
 .RS 8
 .TQ
-.B _Bool grid[4][4];
+.B int dummy;
 .RE
 .B }
 .PP
-Your subroutine will be called after the game has handled input and updated the grid accordingly, but before it has rendered to the screen.  It will take the
-.I grid
-in the structure you return and set the real grid to that grid.  (Note that the grid your program recieves may already have been tampered with by other programs that were loaded before yours.)
+Your subroutine will be called after the game has handled input and updated the grid accordingly, but before it has rendered to the screen.
 .PP
-The structure you recieve will also contain a string containing all of the keys pressed that frame.  Your program may use this information however it wishes.
+The structure you recieve will contain a long long stating how many frames have passed, and a string containing all of the keys pressed that frame.  Your program may use this information however it wishes.
 .SH REPORTING BUGS
 All bugs should be reported on the GitHub page for the project:
 .UR

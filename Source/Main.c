@@ -46,22 +46,43 @@
 #include "Checks.h"
 #include <dlfcn.h>
 #include "SDL.h"
+#include <stdbool.h>
 
 static const int screenwidth = 640;
 static const int screenheight = 480;
 
 struct newstate {
-	_Bool grid[4][4];
+	int dummy;
 };
 
 struct curstate {
-	_Bool grid[4][4];
 	long long frame;
 	char keys[];
 };
 
 int main(int argc, char ** argv)
 {
+
+	short gpcount = 0;
+	char prgm_names[8][1024];
+	struct newstate (*programs[8])(struct curstate);
+	void * tables[8];
+
+	SDL_Window * window;
+	SDL_Renderer * renderer;
+
+	[[maybe_unused]] bool battery_checks = 0;
+
+	SDL_Event event;
+	bool quit = 0;
+
+	long long ticks = 0;
+	long long frames = 0;
+	long long over_frames = 0;
+
+	struct newstate new_state [[maybe_unused]] ;
+	struct curstate cur_state;
+	char keys[] = "";
 
 	const struct sigaction act = {
 		.sa_sigaction = handler,
@@ -80,13 +101,9 @@ int main(int argc, char ** argv)
 		sigaction(sigs_to_ign[i], &ign, NULL);
 	}
 
-	short gpcount = 0;
-	/* It's really silly that I need to do all of this to get a dynamically-stored array of arrays. */
-	char ** prgm_names = calloc(8, sizeof (char *));
-	for (register size_t i = 0; i < ((sizeof prgm_names) / (sizeof (char *))); i++)
-		prgm_names[i] = calloc(256, sizeof (char));
-	_Bool * too_many = calloc(1, sizeof (_Bool));
-	_Bool * nonprgms = calloc(1, sizeof (_Bool));
+	bool * too_many = calloc(1, sizeof (bool));
+	bool * nonprgms = calloc(1, sizeof (bool));
+
 	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-il:")){
 		switch (opts){
 		case 0:
@@ -98,9 +115,6 @@ int main(int argc, char ** argv)
 			"(If you were trying to use \e[4m--help\e[m or \e[4m--version\e[m, please use \e[4m-h\e[m or \e[4m-v\e[m.)\n");
 			free(too_many);
 			free(nonprgms);
-			for (register size_t i = 0; i < ((sizeof prgm_names) / (sizeof (char *))); i++)
-				free(prgm_names[i]);
-			free(prgm_names);
 			crash(2, "No extra info.");
 		case '?':
 		case 'h':
@@ -110,24 +124,18 @@ int main(int argc, char ** argv)
 			"Options available:\n"
 			"\t\e[1m-v\e[m: \tdisplay the version.\n"
 			"\t\e[1m-h\e[m or \e[1m-?\e[m: \tdisplay this help blurb.\n"
-			"\t\e[1m-l\e[m \e[4m<API-using–program>\e[m: \tload the program for usage.  Up to 8 programs can be loaded at a time, though overusage of computing resources can lead to crashing.\n"
+			"\t\e[1m-l\e[m \e[4m<API-using–program>\e[m: \tload the program for usage.  Up to 8 programs can be loaded at a time, though overusage of computing resources can lead to crashing.  Programs can also be loaded from within the application.\n"
 			"\n"
 			"For more information, please see the manpage (available with \e[1mman gake\e[m, if installed).\n"
 			"\n"
 			"\e[1mThis program does not and never will support GNU-style options.\e[m\n");
 			free(too_many);
 			free(nonprgms);
-			for (register size_t i = 0; i < ((sizeof prgm_names) / (sizeof (char *))); i++)
-				free(prgm_names[i]);
-			free(prgm_names);
 			return 1; /* Counted as a failure for consistency with other software and not breaking things like `make`. */
 		case 'v':
 			printf("This is Gake vN.0, semantic version 0.0.0.\n");
 			free(too_many);
 			free(nonprgms);
-			for (register size_t i = 0; i < ((sizeof prgm_names) / (sizeof (char *))); i++)
-				free(prgm_names[i]);
-			free(prgm_names);
 			return 1; /* See above comment. */
 		case 'l':
 			if (gpcount >= 8){
@@ -159,7 +167,6 @@ int main(int argc, char ** argv)
 	debug_notice();
 
 	logmsg(lp_debug, lc_checks, "Beginning checks…");
-	[[maybe_unused]] _Bool battery_checks = 0;
 	switch (run_checks()){
 	case -1:
 		battery_checks = 1;
@@ -181,54 +188,23 @@ int main(int argc, char ** argv)
 	}
 	free(nonprgms);
 	if (*too_many)
-		logmsg(lp_err, lc_api, "You have requested too many programs to be loaded.  Additional programs have been ignored.");
+		logmsg(lp_err, lc_api, "You have requested too many programs to be loaded.  Additional programs have been ignored.  (You can free program space and reload these programs from inside the game.)");
 	free(too_many);
 
-	struct newstate (*programs[8])(struct curstate);
-	void * tables[8];
 	if (gpcount >= 1){
-		logmsg(lp_info, lc_api, "Loading programs…");
+		logmsg(lp_info, lc_api, "Loading programs from the command line…");
 		for (register short i = 0; i < gpcount; i++){
 			tables[i] = dlopen(prgm_names[i], RTLD_NOW | RTLD_LOCAL);
 			programs[i] = dlsym(tables[i], "gake_main");
+			logmsg(lp_debug, lc_api, "Loaded program %s.", prgm_names[i]);
 		}
 		logmsg(lp_info, lc_api, "All programs have been loaded!");
 	}
-	for (register size_t i = 0; i < ((sizeof prgm_names) / (sizeof (char *))); i++)
-		free(prgm_names[i]);
-	free(prgm_names);
 
 	SDL_Init(SDL_INIT_VIDEO);
-	SDL_Window * window = SDL_CreateWindow("Gake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenwidth, screenheight, 0);
-	SDL_Renderer * renderer = SDL_CreateRenderer(window, -1, 0);
+	window = SDL_CreateWindow("Gake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenwidth, screenheight, 0);
+	renderer = SDL_CreateRenderer(window, -1, 0);
 
-	SDL_Event event;
-	_Bool quit = 0;
-	struct {
-		int x;
-		int y;
-		_Bool unhandled;
-	} click = {
-		.x = 0,
-		.y = 0,
-		.unhandled = 0
-	};
-	_Bool squares[4][4] = {
-		{0, 0, 0, 0},
-		{0, 0, 0, 0},
-		{0, 0, 0, 0},
-		{0, 0, 0, 0}
-	};
-	SDL_Rect rect = {
-		.w = screenwidth / 4,
-		.h = screenheight / 4
-	};
-	long long ticks = 0;
-	long long frames = 0;
-	long long over_frames = 0;
-	struct newstate new_state;
-	struct curstate cur_state;
-	char keys[] = "";
 	for (;;){
 		frames++;
 		ticks = SDL_GetTicks64();
@@ -240,13 +216,6 @@ int main(int argc, char ** argv)
 			case SDL_QUIT:
 				quit++;
 				break;
-			case SDL_MOUSEBUTTONDOWN:
-				if (event.button.button == SDL_BUTTON_LEFT){
-					click.x = event.button.x;
-					click.y = event.button.y;
-					click.unhandled++;
-				}
-				break;
 			case SDL_KEYDOWN:
 				if (event.key.keysym.sym < 0x7f && event.key.keysym.sym > 8)
 					strncat(keys, (char *)&event.key.keysym.sym, 1);
@@ -254,50 +223,14 @@ int main(int argc, char ** argv)
 		}
 		if (quit) break;
 
-		/* Could this be put in a separate subroutine?  Yeah, but this is just a placeholder, so whatever. */
-		if (click.unhandled){
-			short x;
-			short y;
-			const short x4 = screenwidth/4;
-			const short y4 = screenheight/4;
-
-			if (click.x >= 0 && click.x < x4) x = 0;
-			else if (click.x >= x4 && click.x < (x4 * 2)) x = 1;
-			else if (click.x >= (x4 * 2) && click.x < (x4 * 3)) x = 2;
-			else x = 3;
-
-			if (click.y >= 0 && click.y < y4) y = 0;
-			else if (click.y >= y4 && click.y < (y4 * 2)) y = 1;
-			else if (click.y >= (y4 * 2) && click.y < (y4 * 3)) y = 2;
-			else y = 3;
-
-			squares[x][y] = !squares[x][y];
-			click.unhandled = 0;
-		}
-
 		for (register short i = 0; i < gpcount; i++){
 			cur_state.frame = frames;
 			strcpy(cur_state.keys, keys);
-			memcpy(cur_state.grid, squares, (sizeof squares) / (sizeof (_Bool)));
 			new_state = programs[i](cur_state);
-			memcpy(squares, new_state.grid, (sizeof squares) / (sizeof (_Bool)));
 		}
 
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderClear(renderer);
-
-		SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-		for (int x = 0; x < 4; x++){
-			for (int y = 0; y < 4; y++){
-				if (squares[x][y] == 0){
-					const short x4 = screenwidth/4;
-					const short y4 = screenheight/4;
-					rect.x = x4 * x;
-					rect.y = y4 * y;
-					SDL_RenderFillRect(renderer, &rect);
-				}
-			}
-		}
 
 		SDL_RenderPresent(renderer);
 

@@ -37,6 +37,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <stdbool.h>
 
 uint8_t crashno;
 char crashstr[512]; /* Should be enough for anything, right? */
@@ -70,9 +71,10 @@ static const char crash_msgs[16][128] = {
 }
 
 /* This isn't written the best, and could probably be reorganized to make a bit more sense. */
+/* TODO:  This crash handler should have a nicer interface through SDL, instead of just using messageboxes. */
 void handler(int signo, siginfo_t * info, [[maybe_unused]] void * context)
 {
-	_Bool perform_default = 0;
+	bool perform_default = 0;
 
 	char details[256] = "No other details.";
 
@@ -181,9 +183,11 @@ void handler(int signo, siginfo_t * info, [[maybe_unused]] void * context)
 	case SIGTERM:
 		perform_default = 1;
 		crashno = 0x0A;
+		goto nothing;
 	case SIGQUIT:
 		perform_default = 1;
 		crashno = 0x08;
+		[[fallthrough]];
 	/* This could probably be used for something, but for now, it does nothing. */
 	case SIGINT:
 		goto nothing;
@@ -246,7 +250,7 @@ void handler(int signo, siginfo_t * info, [[maybe_unused]] void * context)
 		} else {
 			strcpy(share, shareptr);
 		}
-		char crash_report_name[128];
+		char crash_report_name[128] = {};
 		char time_str[64];
 		time_t the_time = time(NULL);
 		strftime(time_str, 64, "%F_%T", localtime(&the_time));
