@@ -76,7 +76,7 @@ int main(int argc, char ** argv)
 	[[maybe_unused]] bool battery_checks = 0;  // Intended to be used to indicate that during the main loop, the game should check the battery level every so often.  Not being used right now because I was rushed to get vN.1 out. //
 
 	SDL_Event event;
-	bool quit = 0;
+	bool exit = 0;
 	struct mouse the_mouse;
 
 	long long ticks = 0;
@@ -216,7 +216,7 @@ int main(int argc, char ** argv)
 		while (SDL_PollEvent(&event)){
 			switch (event.type){
 			case SDL_QUIT:
-				quit++;
+				exit++;
 				break;
 			case SDL_KEYDOWN:
 				if (event.key.keysym.sym < 0x7f && event.key.keysym.sym > 8)
@@ -225,7 +225,7 @@ int main(int argc, char ** argv)
 			}
 		}
 		the_mouse.mask = SDL_GetMouseState(&the_mouse.x, &the_mouse.y);
-		if (quit) break;
+		if (exit) break;
 
 		for (register short i = 0; i < gpcount; i++){
 			cur_state.frame = frames;
@@ -236,7 +236,9 @@ int main(int argc, char ** argv)
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderClear(renderer);
 
-		render_menu(the_mouse, renderer, menu_assets);
+		if (render_menu(the_mouse, renderer, menu_assets) == quit){
+			exit++;
+		}
 
 		SDL_RenderPresent(renderer);
 

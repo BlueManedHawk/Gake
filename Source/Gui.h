@@ -27,4 +27,11 @@ struct mouse {
 	uint32_t mask;
 };
 
-extern void render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets);
+enum button {
+	none,
+	play,
+	prgm,
+	quit
+};
+
+extern enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets);

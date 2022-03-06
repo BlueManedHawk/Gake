@@ -54,17 +54,10 @@ MKRECT_XYWH(quitgraphic, 21/32, 7/12, 3/16, 1/4);
 MKRECT_XYWH(quitoffset, 5/8, 13/24, 1/4, 1/4);
 MKRECT_XYWH(quitgrophset, 21/32, 13/24, 3/16, 1/4);
 
-enum button {
-	none,
-	play,
-	prgm,
-	quit
-};
-
 static enum button selected = none;
 static enum button hover = none;
 
-void render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets)
+enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets)
 {
 	SDL_Point mousepos = {
 		.x = the_mouse.x,
@@ -75,9 +68,18 @@ void render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface **
 	int32_t light_blue_mask = SDL_MapRGBA(surface->format, 0x7f, 0x7f, 0xff, 0xff);
 	int32_t blue_mask = SDL_MapRGBA(surface->format, 0x00, 0x00, 0xff, 0xff);
 	int32_t dark_blue_mask = SDL_MapRGBA(surface->format, 0x00, 0x00, 0x7f, 0xff);
+	int32_t light_red_mask = SDL_MapRGBA(surface->format, 0xff, 0x7f, 0x7f, 0xff);
+	int32_t red_mask = SDL_MapRGBA(surface->format, 0xff, 0x00, 0x00, 0xff);
+	int32_t dark_red_mask = SDL_MapRGBA(surface->format, 0x7f, 0x00, 0x00, 0xff);
 
-	if (selected != none && !click)
-		((void)0);  /* This'll be used eventually. */
+	if (selected != none && !click){
+		switch (selected){
+		case quit:
+			return quit;
+		default:
+			break;
+		}
+	}
 
 #define CHECK_MOUSE_FOR(rect)\
 	if (SDL_PointInRect(&mousepos, &( rect ## button ))){\
@@ -93,27 +95,29 @@ void render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface **
 		selected = none;
 	}
 
-#define RENDER(the_button, associated_asset)\
+#define RENDER(the_button, associated_asset, color)\
 	if (selected == the_button){\
-		SDL_FillRect(surface, &( the_button ## button ), light_blue_mask);\
+		SDL_FillRect(surface, &( the_button ## button ), light_ ## color ## _mask);\
 		SDL_BlitScaled(associated_asset, NULL, surface, &( the_button ## graphic ));\
 	} else if (hover == the_button){\
-		SDL_FillRect(surface, &( the_button ## button ), blue_mask);\
-		SDL_FillRect(surface, &( the_button ## offset ), light_blue_mask);\
+		SDL_FillRect(surface, &( the_button ## button ), color ## _mask);\
+		SDL_FillRect(surface, &( the_button ## offset ), light_ ## color ## _mask);\
 		SDL_BlitScaled(associated_asset, NULL, surface, &( the_button ## grophset ));\
 	} else {\
-		SDL_FillRect(surface, &( the_button ## button ), dark_blue_mask);\
-		SDL_FillRect(surface, &( the_button ## offset ), blue_mask);\
+		SDL_FillRect(surface, &( the_button ## button ), dark_ ## color ## _mask);\
+		SDL_FillRect(surface, &( the_button ## offset ), color ## _mask);\
 		SDL_BlitScaled(associated_asset, NULL, surface, &(the_button ## grophset ));\
 	}
 
-	RENDER(play, assets[0]);
-	RENDER(prgm, assets[1]);
-	RENDER(quit, assets[2]);
+	RENDER(play, assets[0], blue);
+	RENDER(prgm, assets[1], blue);
+	RENDER(quit, assets[2], red);
 
 	SDL_Texture * texture = SDL_CreateTextureFromSurface(renderer, surface);\
 	SDL_RenderCopy(renderer, texture, NULL, NULL);
 
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
+
+	return none;
 }
