@@ -21,7 +21,7 @@ CC = clang-13
 CFLAGS = -Wall -Werror -Wextra -std=c2x -fdiagnostics-show-category=name ` sdl2-config --cflags ` ` libgcrypt-config --cflags ` # `-pedantic` should probably also be here, but I couldn't figure out how to include everything in it _except_ the thing preventing `\e from being used as an escape sequence for the escape character.
 CFLAGS_R = -O3
 CFLAGS_D = -O0 -DGAKE_DEBUG -glldb
-LDFLAGS = ` sdl2-config --libs ` -lz -ldl ` libgcrypt-config --libs `
+LDFLAGS = ` sdl2-config --libs ` -lz -ldl ` libgcrypt-config --libs ` -lSDL2_image
 SRC = $(wildcard Source/*.c)
 OBJ_R = $(SRC:.c=_r.o)
 OBJ_D = $(SRC:.c=_d.o)

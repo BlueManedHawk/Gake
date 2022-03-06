@@ -38,7 +38,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include "Crash.h"
-#include <signal.h>
 #include "Logging.h" /* Theoretically, this program could use POSIX's logging systems, but those seemed to me to be too implementation-defined to be very useful. */
 #include <string.h>
 #include <stdlib.h>
@@ -47,6 +46,9 @@
 #include <dlfcn.h>
 #include "SDL.h"
 #include <stdbool.h>
+#include "Setup.h"
+#include "SDL2/SDL_image.h"
+#include "Gui.h"
 
 static const int screenwidth = 640;
 static const int screenheight = 480;
@@ -71,10 +73,11 @@ int main(int argc, char ** argv)
 	SDL_Window * window;
 	SDL_Renderer * renderer;
 
-	[[maybe_unused]] bool battery_checks = 0;
+	[[maybe_unused]] bool battery_checks = 0;  // Intended to be used to indicate that during the main loop, the game should check the battery level every so often.  Not being used right now because I was rushed to get vN.1 out. //
 
 	SDL_Event event;
 	bool quit = 0;
+	struct mouse the_mouse;
 
 	long long ticks = 0;
 	long long frames = 0;
@@ -84,26 +87,14 @@ int main(int argc, char ** argv)
 	struct curstate cur_state;
 	char keys[] = "";
 
-	const struct sigaction act = {
-		.sa_sigaction = handler,
-		.sa_mask = { 0 },
-		.sa_flags = SA_SIGINFO
-	};
-	const struct sigaction ign = {
-		.sa_handler = SIG_IGN
-	};
-	const int sigs_to_handle[16] = {SIGABRT, SIGBUS, SIGFPE, SIGHUP, SIGILL, SIGINT, SIGQUIT, SIGSEGV, SIGTERM, SIGUSR1, SIGSYS, 0};
-	const int sigs_to_ign[8] = {SIGALRM, SIGPIPE, SIGUSR2, SIGVTALRM, 0};
-	for (register unsigned int i = 0; sigs_to_handle[i] != 0; i++){
-		sigaction(sigs_to_handle[i], &act, NULL);
-	}
-	for (register unsigned int i = 0; sigs_to_ign[i] != 0; i++){
-		sigaction(sigs_to_ign[i], &ign, NULL);
-	}
+	SDL_Surface * menu_assets[3];
+
+	install_signals();
 
 	bool * too_many = calloc(1, sizeof (bool));
 	bool * nonprgms = calloc(1, sizeof (bool));
 
+	/* I intend to move this into `Source/Setup.c` at some point, but for now, I just want to get vN.1 out. */
 	for (signed char opts = 0; opts != -1; opts = getopt(argc, argv, "?hv-il:")){
 		switch (opts){
 		case 0:
@@ -201,6 +192,17 @@ int main(int argc, char ** argv)
 		logmsg(lp_info, lc_api, "All programs have been loaded!");
 	}
 
+	IMG_Init(IMG_INIT_PNG);
+	SDL_Surface * textures = IMG_Load("/usr/local/share/Gake/Assets/Textures.png");
+	menu_assets[0] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_BlitSurface(textures, &(SDL_Rect){0, 8, 8, 8}, menu_assets[0], NULL);
+	menu_assets[1] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_BlitSurface(textures, &(SDL_Rect){8, 8, 8, 8}, menu_assets[1], NULL);
+	menu_assets[2] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
+	SDL_BlitSurface(textures, &(SDL_Rect){16, 8, 8, 8}, menu_assets[2], NULL);
+	SDL_FreeSurface(textures);
+	IMG_Quit();
+
 	SDL_Init(SDL_INIT_VIDEO);
 	window = SDL_CreateWindow("Gake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenwidth, screenheight, 0);
 	renderer = SDL_CreateRenderer(window, -1, 0);
@@ -219,8 +221,10 @@ int main(int argc, char ** argv)
 			case SDL_KEYDOWN:
 				if (event.key.keysym.sym < 0x7f && event.key.keysym.sym > 8)
 					strncat(keys, (char *)&event.key.keysym.sym, 1);
+				break;
 			}
 		}
+		the_mouse.mask = SDL_GetMouseState(&the_mouse.x, &the_mouse.y);
 		if (quit) break;
 
 		for (register short i = 0; i < gpcount; i++){
@@ -231,6 +235,8 @@ int main(int argc, char ** argv)
 
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderClear(renderer);
+
+		render_menu(the_mouse, renderer, menu_assets);
 
 		SDL_RenderPresent(renderer);
 
@@ -251,6 +257,10 @@ int main(int argc, char ** argv)
 
 	for (register short i = 0; i < gpcount; i++){
 		dlclose(tables[i]);
+	}
+
+	for (register short i = 0; i < 3; i++){
+		SDL_FreeSurface(menu_assets[i]);
 	}
 
 	SDL_DestroyRenderer(renderer);

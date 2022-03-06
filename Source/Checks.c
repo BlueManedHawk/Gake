@@ -40,8 +40,8 @@
 #include <stdbool.h>
 
 static const struct file_data files_list[2] = {
-	{{0x8277519b0267bc80, 0x46b8fb577867402d, 0x9866eb94bb6592f7, 0x3d588676681a8e5a, 0xa1af99a4767c7378, 0xf758ade27bffe5c4, 0x2f961c59d1748173, 0xe6d39fd96d567188}, 443, "/usr/local/share/Gake/Assets/Textures.png"},
-	{{0xca19a88b98f18c9d, 0x64071c594d5ff2a8, 0x998f3ed76494626a, 0x8eb5f88388eb05d9, 0x4135c3fc843350ea, 0xd58d2a2beac843fa, 0x20c3e97bfb71d39b, 0x9eb27807e2c5993e}, 1959, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
+	{{0xa6887d3b0009db06, 0xbe6109d1a7cce845, 0xca51ed831fc11d3e, 0x5434aa67c5a9f631, 0x0ae486d254678172, 0x654aa504a784e36e, 0x60c5035f012d5dee, 0x309ca07bf221c709}, 520, "/usr/local/share/Gake/Assets/Textures.png"},
+	{{0xfec0992f7258d68b, 0x462cde2e71bdb86a, 0x27d04471a1e8161d, 0xb949f827864be05e, 0xd6a1eb880efd90dd, 0xfe3f6cc7e4cc81a9, 0x063439e66eb90df5, 0x9f9bad72827c531f}, 2761, "/usr/local/share/Gake/Assets/Log_Splashes.txt"}
 };
 
 short run_checks(void)
@@ -65,13 +65,13 @@ short run_checks(void)
 			if (memcmp(checksum, files_list[i].checksum, sizeof checksum)){
 				char realsum_str[129] = "";
 				char badsum_str[129] = "";
-				char sect[16];
+				char sect[17];
 				for (register size_t j = 0; j < ((sizeof checksum) / sizeof (long long)); j++){
-					sprintf(sect, "%llx", checksum[j]);
+					sprintf(sect, "%.16llx", checksum[j]);
 					strcat(badsum_str, sect);
 				}
 				for (register size_t j = 0; j < ((sizeof files_list[i].checksum) / sizeof (long long)); j++){
-					sprintf(sect, "%llx", files_list[i].checksum[j]);
+					sprintf(sect, "%.16llx", files_list[i].checksum[j]);
 					strcat(realsum_str, sect);
 				}
 				logmsg(lp_err, lc_checks, "Expected file %s to have checksum %s, but got checksum %s.", files_list[i].filename, realsum_str, badsum_str);
