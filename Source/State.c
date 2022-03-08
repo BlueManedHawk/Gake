@@ -27,7 +27,7 @@
 
 #include "SDL.h"
 #include <stdbool.h>
-#include "Gui.h"
+#include "State.h"
 
 static const short winheight = 480;
 static const short winwidth = 640;
@@ -41,10 +41,10 @@ static const short winwidth = 640;
 	}
 
 /* REALLY wish that the C Preprocessor had loops. */
-MKRECT_XYWH(playbutton, 1/8, 1/6, 3/8, 2/3);
-MKRECT_XYWH(playgraphic, 3/16, 1/3, 1/4, 1/3);
-MKRECT_XYWH(playoffset, 1/8, 3/24, 3/8, 2/3);
-MKRECT_XYWH(playgrophset, 3/16, 7/24, 1/4, 1/3);
+MKRECT_XYWH(gamebutton, 1/8, 1/6, 3/8, 2/3);
+MKRECT_XYWH(gamegraphic, 3/16, 1/3, 1/4, 1/3);
+MKRECT_XYWH(gameoffset, 1/8, 3/24, 3/8, 2/3);
+MKRECT_XYWH(gamegrophset, 3/16, 7/24, 1/4, 1/3);
 MKRECT_XYWH(prgmbutton, 5/8, 1/6, 1/4, 1/4 /* No, that's correct. */);
 MKRECT_XYWH(prgmgraphic, 21/32 /*ew*/, 1/6, 3/16, 1/4 /* Also correct. */);
 MKRECT_XYWH(prgmoffset, 5/8, 3/24, 1/4, 1/4);
@@ -54,10 +54,10 @@ MKRECT_XYWH(quitgraphic, 21/32, 7/12, 3/16, 1/4);
 MKRECT_XYWH(quitoffset, 5/8, 13/24, 1/4, 1/4);
 MKRECT_XYWH(quitgrophset, 21/32, 13/24, 3/16, 1/4);
 
-static enum button selected = none;
-static enum button hover = none;
+static enum state selected = menu;
+static enum state hover = menu;
 
-enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets)
+enum state render_menu(struct mouse the_mouse, SDL_Keycode key, SDL_Renderer * renderer, SDL_Surface ** assets)
 {
 	SDL_Point mousepos = {
 		.x = the_mouse.x,
@@ -72,28 +72,32 @@ enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Sur
 	int32_t red_mask = SDL_MapRGBA(surface->format, 0xff, 0x00, 0x00, 0xff);
 	int32_t dark_red_mask = SDL_MapRGBA(surface->format, 0x7f, 0x00, 0x00, 0xff);
 
-	if (selected != none && !click){
-		switch (selected){
-		case quit:
-			return quit;
-		default:
-			break;
-		}
+	if (key == SDLK_INSERT || key == SDLK_RETURN || key == SDLK_DELETE || key == SDLK_ESCAPE)
+		click++;
+
+	if (selected != menu && !click){
+		SDL_FreeSurface(surface);
+		return selected;
 	}
 
 #define CHECK_MOUSE_FOR(rect)\
 	if (SDL_PointInRect(&mousepos, &( rect ## button ))){\
 		hover = rect;\
-		selected = click ? rect : none;}
+		selected = click ? rect : menu;}
 
 	/* I don't think this is how the preprocessor is meant to be used. */
-	CHECK_MOUSE_FOR(play)
+	CHECK_MOUSE_FOR(game)
 	else CHECK_MOUSE_FOR(prgm)
 	else CHECK_MOUSE_FOR(quit)
 	else {
-		hover = none;
-		selected = none;
+		hover = menu;
+		selected = menu;
 	}
+
+	if (key == SDLK_INSERT || key == SDLK_RETURN)
+		selected = game;
+	else if (key == SDLK_DELETE || key == SDLK_ESCAPE)
+		selected = quit;
 
 #define RENDER(the_button, associated_asset, color)\
 	if (selected == the_button){\
@@ -109,7 +113,7 @@ enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Sur
 		SDL_BlitScaled(associated_asset, NULL, surface, &(the_button ## grophset ));\
 	}
 
-	RENDER(play, assets[0], blue);
+	RENDER(game, assets[0], blue);
 	RENDER(prgm, assets[1], blue);
 	RENDER(quit, assets[2], red);
 
@@ -119,5 +123,13 @@ enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Sur
 	SDL_DestroyTexture(texture);
 	SDL_FreeSurface(surface);
 
-	return none;
+	return menu;
+}
+
+enum state render_game(long long frames [[maybe_unused]], SDL_Keycode key [[maybe_unused]], struct mouse the_mouse [[maybe_unused]], SDL_Renderer * renderer [[maybe_unused]], SDL_Surface ** assets [[maybe_unused]]){
+	return menu;
+}
+
+enum state render_prgm(struct mouse the_mouse [[maybe_unused]], SDL_Keycode key [[maybe_unused]], SDL_Renderer * renderer [[maybe_unused]]){
+	return menu;
 }

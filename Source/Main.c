@@ -7,7 +7,6 @@
  * This project is copylefted.  You may freely use, distribute, and modify this software, to the extent permitted by law, so long as you do not attempt to claim such activities are condoned by the author, you distribute the license file with any distributions of this software, you release any modifications under a similar license, and you do not attempt to claim that modified software is the original software.
  *
  * This license does not apply to software created with the API of this software (thought it does apply to the API itself); it also does not apply to any rule files, all of which must be placed in the public domain.
- *
  * This software links to zlib, which is under the zlib license, available at https://www.zlib.net/zlib_license.html.
  *
  * This software dynamically links to SDL2, which is under a separate instance of the zlib license, available at https://libsdl.org/license.php.
@@ -48,26 +47,25 @@
 #include <stdbool.h>
 #include "Setup.h"
 #include "SDL2/SDL_image.h"
-#include "Gui.h"
+#include "State.h"
 
 static const int screenwidth = 640;
 static const int screenheight = 480;
 
-struct newstate {
+struct newboard {
 	int dummy;
 };
 
-struct curstate {
+struct curboard {
 	long long frame;
 	char keys[];
 };
 
 int main(int argc, char ** argv)
 {
-
 	short gpcount = 0;
 	char prgm_names[8][1024];
-	struct newstate (*programs[8])(struct curstate);
+	struct newboard (*programs[8])(struct curboard);
 	void * tables[8];
 
 	SDL_Window * window;
@@ -83,11 +81,15 @@ int main(int argc, char ** argv)
 	long long frames = 0;
 	long long over_frames = 0;
 
-	struct newstate new_state [[maybe_unused]] ;
-	struct curstate cur_state;
+	struct newboard new_board [[maybe_unused]] ;
+	struct curboard cur_board;
 	char keys[] = "";
 
+	enum state the_state;
+	SDL_Keycode key = SDLK_SPACE;
+
 	SDL_Surface * menu_assets[3];
+	SDL_Surface * game_assets[4];
 
 	install_signals();
 
@@ -134,7 +136,7 @@ int main(int argc, char ** argv)
 			} else {
 				void * table = dlopen(optarg, RTLD_LAZY | RTLD_LOCAL);
 				if (table != NULL){
-					struct newstate (*gake_main)(struct curstate) = dlsym(table, "gake_main");
+					struct newboard (*gake_main)(struct curboard) = dlsym(table, "gake_main");
 					if (gake_main == NULL){
 						*nonprgms = 1;
 					} else {
@@ -192,16 +194,22 @@ int main(int argc, char ** argv)
 		logmsg(lp_info, lc_api, "All programs have been loaded!");
 	}
 
+	logmsg(lp_debug, lc_env, "Loading textures…");
 	IMG_Init(IMG_INIT_PNG);
 	SDL_Surface * textures = IMG_Load("/usr/local/share/Gake/Assets/Textures.png");
-	menu_assets[0] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
-	SDL_BlitSurface(textures, &(SDL_Rect){0, 8, 8, 8}, menu_assets[0], NULL);
-	menu_assets[1] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
-	SDL_BlitSurface(textures, &(SDL_Rect){8, 8, 8, 8}, menu_assets[1], NULL);
-	menu_assets[2] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);
-	SDL_BlitSurface(textures, &(SDL_Rect){16, 8, 8, 8}, menu_assets[2], NULL);
+#define LOAD_ASSET(game_state, state_line, n)\
+	game_state ## _assets[n] = SDL_CreateRGBSurfaceWithFormat(0, 8, 8, 32, SDL_PIXELFORMAT_RGBA32);\
+	SDL_BlitSurface(textures, &(SDL_Rect){ n * 8, state_line * 8, 8, 8}, game_state ## _assets[n], NULL)
+	LOAD_ASSET(menu, 1, 0);
+	LOAD_ASSET(menu, 1, 1);
+	LOAD_ASSET(menu, 1, 2);
+	LOAD_ASSET(game, 0, 0);
+	LOAD_ASSET(game, 0, 1);
+	LOAD_ASSET(game, 0, 2);
+	LOAD_ASSET(game, 0, 3);
 	SDL_FreeSurface(textures);
 	IMG_Quit();
+	logmsg(lp_debug, lc_env, "Textures loaded!");
 
 	SDL_Init(SDL_INIT_VIDEO);
 	window = SDL_CreateWindow("Gake", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenwidth, screenheight, 0);
@@ -228,16 +236,27 @@ int main(int argc, char ** argv)
 		if (exit) break;
 
 		for (register short i = 0; i < gpcount; i++){
-			cur_state.frame = frames;
-			strcpy(cur_state.keys, keys);
-			new_state = programs[i](cur_state);
+			cur_board.frame = frames;
+			strcpy(cur_board.keys, keys);
+			new_board = programs[i](cur_board);
 		}
 
 		SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
 		SDL_RenderClear(renderer);
 
-		if (render_menu(the_mouse, renderer, menu_assets) == quit){
+		switch (the_state){
+		case game:
+			the_state = render_game(frames, key, the_mouse, renderer, game_assets);
+			break;
+		case menu:
+			the_state = render_menu(the_mouse, key, renderer, menu_assets);
+			break;
+		case prgm:
+			the_state = render_prgm(the_mouse, key, renderer);
+			break;
+		case quit:
 			exit++;
+			break;
 		}
 
 		SDL_RenderPresent(renderer);
@@ -263,6 +282,10 @@ int main(int argc, char ** argv)
 
 	for (register short i = 0; i < 3; i++){
 		SDL_FreeSurface(menu_assets[i]);
+	}
+
+	for (register short i = 0; i < 4; i++){
+		SDL_FreeSurface(game_assets[i]);
 	}
 
 	SDL_DestroyRenderer(renderer);

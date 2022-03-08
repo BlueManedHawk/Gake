@@ -18,6 +18,9 @@
  *
  * THIS PRODUCT COMES WITH ABSOLUTELY NO WARRANTY, IMPLIED OR EXPLICIT, TO THE EXTENT PERMITTED BY LAW.  THE AUTHOR DISCLAIMS ANY LIABILITY FOR ANY DAMAGES OF ANY KIND CAUSED BY THIS PRODUCT, TO THE EXTENT PERMITTED BY LAW.*/
 
+#ifndef STATE_H
+#define STATE_H
+
 #include "SDL.h"
 #include <stdint.h>
 
@@ -27,11 +30,15 @@ struct mouse {
 	uint32_t mask;
 };
 
-enum button {
-	none,
-	play,
+enum state {
+	menu,
+	game,
 	prgm,
 	quit
 };
 
-extern enum button render_menu(struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets);
+extern enum state render_menu(struct mouse the_mouse, SDL_Keycode key, SDL_Renderer * renderer, SDL_Surface ** assets);
+extern enum state render_game(long long frames, SDL_Keycode key, struct mouse the_mouse, SDL_Renderer * renderer, SDL_Surface ** assets);
+extern enum state render_prgm(struct mouse the_mouse, SDL_Keycode key, SDL_Renderer * renderer);
+
+#endif/*ndef STATE_H*/
